@@ -12,11 +12,11 @@ import { Button } from "@/components/ui/button";
 import type { Role } from "@/lib/types";
 
 const navigation = [
-  { label: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "agent"] },
-  { label: "Deposits", href: "/deposits", icon: ArrowDownToLine, roles: ["admin", "agent"] },
-  { label: "Withdrawals", href: "/withdrawals", icon: ArrowUpFromLine, roles: ["admin", "agent"] },
-  { label: "Clients", href: "/clients", icon: Building2, roles: ["admin"] },
-  { label: "Support chat", href: "/chat", icon: MessageCircle, roles: ["admin", "agent"] },
+  { label: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "psp"] },
+  { label: "Deposits", href: "/deposits", icon: ArrowDownToLine, roles: ["admin", "psp"] },
+  { label: "Withdrawals", href: "/withdrawals", icon: ArrowUpFromLine, roles: ["admin", "psp"] },
+  { label: "PSP partners", href: "/clients", icon: Building2, roles: ["admin"] },
+  { label: "Support chat", href: "/chat", icon: MessageCircle, roles: ["admin", "psp"] },
 ] as const;
 
 function NavItems({ role }: { role: Role }) {

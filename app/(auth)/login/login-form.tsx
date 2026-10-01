@@ -1,45 +1,122 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, LockKeyhole } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, type FormEvent } from "react";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@vaspan.dev");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setBusy(true); setError("");
-    const result = await signIn("credentials", { email, password, redirect: false });
-    setBusy(false);
-    if (result?.error) { setError("Those credentials did not match a demo account."); return; }
-    router.push("/dashboard"); router.refresh();
+  const [isBusy, setIsBusy] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setIsBusy(true);
+
+    try {
+      // This browser request intentionally keeps the backend login visible in DevTools.
+      console.info("[Vaspan login] POST /api/auth/login");
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+        cache: "no-store",
+      });
+      console.info("[Vaspan login] response", { status: response.status, ok: response.ok });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setError(payload?.message || "We couldn’t sign you in. Check your email and password, and confirm the payment service is available.");
+        return;
+      }
+
+      const result = await signIn("credentials", {
+        email: email.trim(),
+        redirect: false,
+        callbackUrl: "/dashboard",
+      });
+
+      if (!result?.ok) {
+        console.error("[Vaspan login] credentials session was not created", { error: result?.error });
+        setError("Your credentials were accepted, but we couldn’t start your session. Please try again.");
+        return;
+      }
+
+      router.replace(result.url || "/dashboard");
+      router.refresh();
+    } catch (cause) {
+      console.error("[Vaspan login] request failed", cause instanceof Error ? cause.message : "Unknown error");
+      setError("We couldn’t sign you in. Check your email and password, and confirm the payment service is available.");
+    } finally {
+      try {
+        await fetch("/api/auth/login", { method: "DELETE", cache: "no-store" });
+      } catch (cause) {
+        console.warn("[Vaspan login] temporary credential cleanup failed", cause instanceof Error ? cause.message : "Unknown error");
+      }
+      setIsBusy(false);
+    }
   }
+
   return (
-    <div className="grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-border bg-card shadow-xl lg:grid-cols-[1.05fr_0.95fr]">
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-[#071f2a] p-12 text-white lg:flex">
-        <div className="absolute -right-24 -top-20 size-80 rounded-full bg-cyan-400/20 blur-3xl" />
-        <div className="relative flex items-center gap-3"><Image src="/vaspan-logo.svg" alt="" width={42} height={42} priority className="size-11 object-contain" /><span className="text-lg font-semibold tracking-wide">Vaspan<span className="text-cyan-300">.</span></span></div>
-        <div className="relative max-w-md"><p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Payment operations</p><h1 className="text-4xl font-semibold leading-tight">Move money with clarity and control.</h1><p className="mt-5 text-sm leading-6 text-slate-300">A single workspace for deposits, withdrawals, client accounts, and the people who keep every transaction moving.</p></div>
-        <p className="relative text-xs text-slate-400">Secure workspace · Demo environment</p>
+    <section className="relative z-10 grid w-full max-w-6xl grid-cols-1 overflow-hidden rounded-[2rem] border border-border bg-card p-2 text-card-foreground shadow-[0_32px_100px_-36px_rgba(3,31,39,.42)] lg:grid-cols-[1.02fr_.98fr]">
+      <aside className="vaspan-login-pattern vaspan-login-artwork relative hidden min-h-[590px] flex-col justify-between overflow-hidden rounded-[1.55rem] p-10 text-white lg:flex xl:p-12">
+        <span aria-hidden="true" className="vaspan-login-stars vaspan-login-stars-small" />
+        <span aria-hidden="true" className="vaspan-login-stars vaspan-login-stars-medium" />
+        <span aria-hidden="true" className="vaspan-login-stars vaspan-login-stars-large" />
+        <div className="relative z-10 flex items-center gap-3">
+          <Image src="/vaspan-logo.svg" alt="Vaspan" width={40} height={40} className="size-9 w-auto shrink-0" priority />
+          <span className="rounded-full border border-[#00DDFF]/25 bg-[#00DDFF]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[.22em] text-[#00DDFF]">Payment operations</span>
+        </div>
+        <div className="relative z-10 max-w-lg pb-4">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#00DDFF]/25 bg-[#00DDFF]/10 px-3 py-1.5 text-xs font-medium text-[#00DDFF]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#00DDFF] shadow-[0_0_12px_rgba(0,221,255,.9)]" /> Secure workspace access
+          </div>
+          <h2 className="text-4xl font-semibold leading-[1.08] tracking-[-.04em] xl:text-5xl">Move money with clarity and control.</h2>
+          <p className="mt-5 max-w-md text-sm leading-6 text-slate-200/75">A single, secure workspace for the people and payment flows that keep your business moving.</p>
+          <div className="mt-10 flex items-center gap-3 text-xs text-slate-200/60"><span className="h-px w-9 bg-[#00DDFF]" /> VASPAN · PAYMENT SERVICES</div>
+        </div>
+        <div className="relative z-10 flex items-center justify-between border-t border-white/10 pt-5 text-[11px] text-slate-200/55"><span>Built for confident operations</span><span>© Vaspan</span></div>
+      </aside>
+
+      <div className="relative flex min-h-[590px] items-center justify-center px-5 py-10 sm:px-10 lg:px-12 xl:px-16">
+        <div className="w-full max-w-md">
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <Image src="/vaspan-logo.svg" alt="Vaspan" width={112} height={34} className="h-8 w-auto" priority />
+            <span className="text-xs text-muted-foreground">Payment operations</span>
+          </div>
+          {/* <div className="mb-7 flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-[#008a9b] ring-1 ring-cyan-800/10"><LockKeyhole size={21} strokeWidth={1.8} /></div> */}
+          <h1 className="text-3xl font-semibold tracking-[-.035em] text-foreground">Welcome back</h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Sign in to your payment operations workspace.</p>
+
+          <form className="mt-9 space-y-5" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium text-foreground">Work email</label>
+              <Input id="email" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" className="h-12 rounded-xl border-border bg-muted/50 px-4 text-sm text-foreground shadow-none transition placeholder:text-muted-foreground focus-visible:border-[#00DDFF] focus-visible:ring-4 focus-visible:ring-[#00DDFF]/15" />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium text-foreground">Password</label>
+              <div className="relative">
+                <Input id="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" className="h-12 rounded-xl border-border bg-muted/50 px-4 pr-12 text-sm text-foreground shadow-none transition placeholder:text-muted-foreground focus-visible:border-[#00DDFF] focus-visible:ring-4 focus-visible:ring-[#00DDFF]/15" />
+                <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} className="absolute inset-y-0 right-0 inline-flex w-12 items-center justify-center rounded-r-xl text-muted-foreground transition hover:text-[#00DDFF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#00DDFF]">
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+            {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-5 text-rose-700">{error}</p>}
+            <button type="submit" disabled={isBusy} className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#00DDFF] px-5 text-sm font-semibold text-[#092126] shadow-[0_8px_24px_-8px_rgba(0,221,255,.5)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#25E2FF] hover:shadow-[0_12px_30px_-8px_rgba(0,221,255,.65)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#00DDFF]/30 disabled:cursor-wait disabled:opacity-70">
+              {isBusy ? "Signing in…" : <>Sign in <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" /></>}
+            </button>
+          </form>
+          <p className="mt-7 text-center text-xs leading-5 text-muted-foreground">Access is provided by your organization administrator.</p>
+        </div>
       </div>
-      <div className="p-7 sm:p-12">
-        <div className="mb-9 flex items-center gap-2 lg:hidden"><Image src="/vaspan-logo.svg" alt="" width={36} height={36} className="size-9 object-contain" /><span className="text-lg font-semibold">Vaspan<span className="text-primary">.</span></span></div>
-        <div className="mb-8"><span className="mb-4 grid size-11 place-items-center rounded-xl bg-muted"><LockKeyhole className="size-5 text-primary" /></span><h2 className="text-2xl font-semibold tracking-tight">Welcome back</h2><p className="mt-2 text-sm text-muted-foreground">Sign in to your payment operations workspace.</p></div>
-        <form className="space-y-5" onSubmit={submit}>
-          <label className="block space-y-2 text-sm font-medium">Work email<Input autoComplete="username" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
-          <label className="block space-y-2 text-sm font-medium">Password<Input autoComplete="current-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
-          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-          <Button className="w-full" size="lg" disabled={busy}>{busy ? "Signing in…" : "Sign in"}<ArrowRight className="size-4" /></Button>
-        </form>
-        <div className="mt-8 rounded-xl border border-border bg-muted/30 p-4 text-xs leading-5 text-muted-foreground"><p className="mb-1 font-medium text-foreground">Demo accounts</p><p>Admin: admin@vaspan.dev / admin123</p><p>PSP agent: agent@vaspan.dev / agent123</p><p className="mt-2">Select an account above by changing the email and password.</p></div>
-      </div>
-    </div>
+    </section>
   );
 }

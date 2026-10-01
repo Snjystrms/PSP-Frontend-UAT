@@ -1,6 +1,6 @@
-export type Role = "admin" | "agent";
+export type Role = "admin" | "psp";
 
-export type RequestStatus = "pending" | "approved" | "rejected";
+export type RequestStatus = "pending" | "processing" | "approved" | "rejected";
 
 export type RequestKind = "deposit" | "withdrawal";
 
@@ -16,6 +16,14 @@ export interface PaymentRequest {
   status: RequestStatus;
   createdAt: string;
   reference: string;
+  comment?: string;
+  accountName?: string;
+  accountNumber?: string;
+  bankName?: string;
+  bankCode?: string;
+  pspCode?: string;
+  callbackFailed?: boolean;
+  callbackAttempts?: number;
 }
 
 export interface BankAccount {

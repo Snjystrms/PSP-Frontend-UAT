@@ -2,26 +2,70 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import type { Role } from "@/lib/types";
 
-export const MOCK_USERS = [
-  { id: "usr_admin", name: "Alex Morgan", email: "admin@vaspan.dev", password: "admin123", role: "admin" as const },
-  { id: "usr_agent", name: "Sam Rivera", email: "agent@vaspan.dev", password: "agent123", role: "agent" as const },
-];
+const backendBase = () => (process.env.PSP_API_BASE_URL ?? "http://localhost:8000/api/v1").replace(/\/+$/, "");
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.AUTH_SECRET ?? "vaspan-local-demo-secret-change-before-deploy",
+  secret: process.env.AUTH_SECRET,
   trustHost: true,
   session: { strategy: "jwt" },
   providers: [Credentials({
     credentials: { email: { label: "Email", type: "email" }, password: { label: "Password", type: "password" } },
-    authorize(credentials) {
-      const user = MOCK_USERS.find((entry) => entry.email === credentials.email && entry.password === credentials.password);
-      if (!user) return null;
-      return { id: user.id, name: user.name, email: user.email, role: user.role };
+    async authorize(credentials, request) {
+      if (typeof credentials.email !== "string") return null;
+      const backendToken = request.headers.get("cookie")
+        ?.split(";")
+        .map((item) => item.trim())
+        .find((item) => item.startsWith("vaspan_backend_login_token="))
+        ?.slice("vaspan_backend_login_token=".length);
+      if (!backendToken) {
+        console.warn("[Vaspan auth] Credentials callback received without the short-lived backend login cookie.");
+        return null;
+      }
+      try {
+        const accessToken = decodeURIComponent(backendToken);
+        const response = await fetch(`${backendBase()}/auth/me`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          cache: "no-store",
+        });
+        console.info(`[Vaspan auth] GET ${backendBase()}/auth/me -> ${response.status}`);
+        if (!response.ok) return null;
+        const profile = (await response.json()) as {
+          id: number;
+          email: string;
+          full_name: string;
+          role: Role;
+          psp_code: string | null;
+        };
+        return {
+          id: String(profile.id),
+          name: profile.full_name,
+          email: profile.email,
+          role: profile.role,
+          pspCode: profile.psp_code ?? undefined,
+          accessToken,
+        };
+      } catch (error) {
+        console.error("[Vaspan auth] Could not load the authenticated backend profile:", error instanceof Error ? error.message : "Unknown network error");
+        return null;
+      }
     },
   })],
   callbacks: {
-    jwt({ token, user }) { if (user) token.role = user.role as Role; return token; },
-    session({ session, token }) { if (session.user) session.user.role = token.role as Role; return session; },
+    jwt({ token, user }) {
+      if (user) {
+        token.role = user.role;
+        token.accessToken = user.accessToken;
+        token.pspCode = user.pspCode;
+      }
+      return token;
+    },
+    session({ session, token }) {
+      if (session.user) {
+        session.user.role = token.role as Role;
+        session.user.pspCode = token.pspCode;
+      }
+      return session;
+    },
   },
   pages: { signIn: "/login" },
 });

@@ -1,9 +1,12 @@
-import { ChatMessages } from "@/components/ui/chat-messages";
+import Link from "next/link";
+import { ArrowDownToLine, ArrowUpFromLine, MessageCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-const messages = [
-  { id: "m1", sender: "assistant" as const, content: "Hi! I’m your Vaspan support assistant. How can I help with payment operations?" },
-  { id: "m2", sender: "user" as const, content: "A client’s withdrawal is taking longer than expected." },
-  { id: "m3", sender: "assistant" as const, content: "I can help with that. Check the request status and destination account verification first. Bank transfers can take 1–2 business days after approval." },
-];
-
-export default function ChatPage() { return <div className="mx-auto max-w-[1100px] space-y-6"><div><p className="text-sm text-muted-foreground">Team workspace</p><h1 className="mt-1 text-3xl font-semibold tracking-tight">Support chat</h1><p className="mt-2 text-sm text-muted-foreground">Get help with requests, settlement timelines, and client account workflows.</p></div><div className="grid gap-5 lg:grid-cols-[1fr_1.2fr]"><aside className="rounded-2xl border border-border bg-card p-5"><h2 className="font-semibold">Conversations</h2><div className="mt-4 space-y-2"><button className="w-full rounded-xl border border-primary/20 bg-primary/5 p-3 text-left"><span className="flex items-center justify-between text-sm font-medium">Operations assistant<span className="size-2 rounded-full bg-emerald-500" /></span><span className="mt-1 block truncate text-xs text-muted-foreground">I can help with that. Check the request status…</span></button><button className="w-full rounded-xl p-3 text-left hover:bg-muted"><span className="text-sm font-medium">Settlement support</span><span className="mt-1 block truncate text-xs text-muted-foreground">Your settlement report is ready to view.</span></button><button className="w-full rounded-xl p-3 text-left hover:bg-muted"><span className="text-sm font-medium">Account verification</span><span className="mt-1 block truncate text-xs text-muted-foreground">We need one more document for this profile.</span></button></div><div className="mt-6 rounded-xl bg-muted/50 p-4"><p className="text-xs font-medium">Support availability</p><p className="mt-1 text-xs text-muted-foreground">Operations team is online · Replies in about 5 minutes</p></div></aside><ChatMessages messages={messages} autoPlay={false} interactive className="min-h-[480px]" /></div></div>; }
+export default function ChatPage() {
+  return <div className="mx-auto max-w-[1100px] space-y-6">
+    <div><p className="text-sm text-muted-foreground">Team workspace</p><h1 className="mt-1 text-3xl font-semibold tracking-tight">Support</h1><p className="mt-2 text-sm text-muted-foreground">Find help with payment operations and request reviews.</p></div>
+    <section className="grid min-h-[420px] place-items-center rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+      <div className="max-w-md"><span className="mx-auto grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary"><MessageCircle className="size-6" /></span><h2 className="mt-5 text-xl font-semibold">Support chat isn’t connected yet</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">The payment backend does not currently provide a chat endpoint, so this workspace won’t show sample conversations as if they were live. You can review the latest payment requests below.</p><div className="mt-6 flex flex-wrap justify-center gap-3"><Button asChild><Link href="/deposits"><ArrowDownToLine className="mr-2 size-4" />Review deposits</Link></Button><Button asChild variant="outline"><Link href="/withdrawals"><ArrowUpFromLine className="mr-2 size-4" />Review withdrawals</Link></Button></div></div>
+    </section>
+  </div>;
+}
