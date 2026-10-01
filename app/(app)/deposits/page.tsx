@@ -1,0 +1,2 @@
+import { RequestsTable } from "@/components/requests/requests-table";
+export default function DepositsPage() { return <div className="mx-auto max-w-[1440px] space-y-6"><div><p className="text-sm text-muted-foreground">Transaction management</p><h1 className="mt-1 text-3xl font-semibold tracking-tight">Deposits</h1><p className="mt-2 text-sm text-muted-foreground">Review client funding requests and confirm incoming payments.</p></div><RequestsTable kind="deposit" /></div>; }

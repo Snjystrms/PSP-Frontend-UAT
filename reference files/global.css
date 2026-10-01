@@ -155,44 +155,10 @@
 /* Vaspan theme variable overrides — declared UNLAYERED so they beat the base
    :root / .dark var blocks above (unlayered styles always win over @layer styles).
    nav-main / sidebar active items read --sidebar-active-text via dark:text-sidebar-active-text. */
-:root[data-theme-id="vaspan-bright"] {
-  --primary: #007d91;
-  --primary-foreground: #04232b;
-  --accent: #e5f9fc;
-  --accent-foreground: #07323a;
-  --ring: #00a9c2;
-  --sidebar-primary: #007d91;
-  --sidebar-primary-foreground: #04232b;
-  --sidebar-accent: #e5f9fc;
-  --sidebar-accent-foreground: #07323a;
-  --sidebar-active-text: #006d7e;
-  --color-primary: #007d91;
-  --color-accent: #00a9c2;
-  --chart-1: #007d91;
-  --chart-2: #00a9c2;
-  --chart-3: #398895;
-  --chart-4: #72ccd9;
-  --chart-5: #285d68;
-}
-
+:root[data-theme-id="vaspan-bright"],
 :root[data-theme-id="vaspan-dark"] {
-  --primary: #00ddff;
-  --primary-foreground: #04232b;
-  --accent: #073640;
-  --accent-foreground: #e4fbff;
-  --ring: #00ddff;
-  --sidebar-primary: #00ddff;
-  --sidebar-primary-foreground: #04232b;
-  --sidebar-accent: #073640;
-  --sidebar-accent-foreground: #e4fbff;
-  --sidebar-active-text: #00ddff;
-  --color-primary: #00ddff;
-  --color-accent: #00ddff;
-  --chart-1: #00ddff;
-  --chart-2: #00afcb;
-  --chart-3: #398895;
-  --chart-4: #72ccd9;
-  --chart-5: #285d68;
+  --primary-foreground: #04232B;
+  --sidebar-active-text: #00DDFF;
 }
 
 @layer base {
@@ -316,20 +282,6 @@
   .ib-portal-action:hover {
     background: color-mix(in srgb, var(--background) 72%, var(--primary) 28%);
   }
-
-.ib-portal-metric {
-  border: 1px solid transparent;
-  background:
-    linear-gradient(var(--card), var(--card)) padding-box,
-    linear-gradient(118deg, color-mix(in srgb, var(--primary) 24%, var(--border)) 0%, var(--primary) 52%, color-mix(in srgb, var(--accent) 55%, var(--border)) 100%) border-box;
-  box-shadow: 0 18px 42px -34px color-mix(in srgb, var(--primary) 72%, transparent);
-  transition: transform 220ms ease, box-shadow 220ms ease;
-}
-
-.ib-portal-metric:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 24px 48px -32px color-mix(in srgb, var(--primary) 64%, transparent);
-}
 
   .ib-portal-surface {
     border-color: color-mix(in srgb, var(--border) 78%, var(--primary) 22%);

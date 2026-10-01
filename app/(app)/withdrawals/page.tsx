@@ -1,0 +1,2 @@
+import { RequestsTable } from "@/components/requests/requests-table";
+export default function WithdrawalsPage() { return <div className="mx-auto max-w-[1440px] space-y-6"><div><p className="text-sm text-muted-foreground">Transaction management</p><h1 className="mt-1 text-3xl font-semibold tracking-tight">Withdrawals</h1><p className="mt-2 text-sm text-muted-foreground">Review payout requests and confirm destination accounts.</p></div><RequestsTable kind="withdrawal" /></div>; }

@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vaspan Payment Operations
 
-## Getting Started
+A Next.js admin workspace scaffold for a payment service provider. It includes role-based demo sign-in, deposit and withdrawal queues, client bank-account details, a KPI dashboard, support chat, and bright/dark Vaspan themes.
 
-First, run the development server:
+## Local setup
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). The root route forwards to the dashboard, and unauthenticated visitors are sent to `/login`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo accounts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@vaspan.dev` | `admin123` |
+| PSP agent | `agent@vaspan.dev` | `agent123` |
 
-## Learn More
+The admin can browse client bank-account details. Both roles can review and approve or reject deposits and withdrawals.
 
-To learn more about Next.js, take a look at the following resources:
+## Scaffold boundaries
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Requests, clients, chat replies, and dashboard chart series use local mock data. Request decisions are held in browser memory and reset on reload. No payment processor or production client database is connected. Set `AUTH_SECRET` to a private random value before deploying; the built-in fallback exists only to make this demo scaffold run locally.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run dev` — start the development server
+- `npm run build` — create a production build
+- `npm run start` — serve the production build
+- `npm run lint` — run ESLint
