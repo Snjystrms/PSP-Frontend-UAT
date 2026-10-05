@@ -18,8 +18,8 @@ export function useUpdatePortalUser() {
   return useMutation({ mutationFn: ({ id, payload }: { id: number; payload: { full_name?: string; is_active?: boolean; password?: string; unlock?: boolean } }) => updatePortalUser(id, payload), onSuccess: () => { void client.invalidateQueries({ queryKey: ["portal-users"] }); toast.success("Portal user updated."); }, onError: (error) => toast.error(error instanceof Error ? error.message : "Could not update user.") });
 }
 
-export function useAuditLogs(filters: { action?: string; target?: string; offset?: number } = {}) {
-  return useQuery({ queryKey: ["audit-logs", filters], queryFn: () => fetchAuditLogs({ ...filters, limit: 200 }) });
+export function useAuditLogs(filters: { action?: string; target?: string; offset?: number; limit?: number } = {}) {
+  return useQuery({ queryKey: ["audit-logs", filters], queryFn: () => fetchAuditLogs({ ...filters, limit: filters.limit ?? 200 }) });
 }
 
 export function useSystemHealth() {

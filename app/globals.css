@@ -199,6 +199,16 @@
   * {
     @apply border-border outline-ring/50;
   }
+  button:not(:disabled),
+  a[href],
+  [role="button"]:not([aria-disabled="true"]),
+  select:not(:disabled),
+  input[type="date"]:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
   html {
     background-color: var(--background);
   }

@@ -48,30 +48,25 @@ export function LoginForm() {
 
   return (
     <section className="relative z-10 grid w-full max-w-6xl grid-cols-1 overflow-hidden rounded-[2rem] border border-border bg-card p-2 text-card-foreground shadow-[0_32px_100px_-36px_rgba(3,31,39,.42)] lg:grid-cols-[1.02fr_.98fr]">
-      <aside className="vaspan-login-pattern vaspan-login-artwork relative hidden min-h-[590px] flex-col justify-between overflow-hidden rounded-[1.55rem] p-10 text-white lg:flex xl:p-12">
+      <aside className="vaspan-login-pattern vaspan-login-artwork relative hidden min-h-[560px] flex-col justify-between overflow-hidden rounded-[1.55rem] p-8 text-white lg:flex xl:p-12">
         <span aria-hidden="true" className="vaspan-login-stars vaspan-login-stars-small" />
         <span aria-hidden="true" className="vaspan-login-stars vaspan-login-stars-medium" />
         <span aria-hidden="true" className="vaspan-login-stars vaspan-login-stars-large" />
-        <div className="relative z-10 flex items-center gap-3">
-          <Image src="/vaspan-logo.svg" alt="Vaspan" width={40} height={40} className="size-9 w-auto shrink-0" priority />
-          <span className="rounded-full border border-[#00DDFF]/25 bg-[#00DDFF]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[.22em] text-[#00DDFF]">Payment operations</span>
+        <div className="relative z-10">
+          <Image src="/vaspan_full_dark.svg" alt="Vaspan" width={184} height={58} className="h-auto w-40 xl:w-44" priority />
         </div>
-        <div className="relative z-10 max-w-lg pb-4">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#00DDFF]/25 bg-[#00DDFF]/10 px-3 py-1.5 text-xs font-medium text-[#00DDFF]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#00DDFF] shadow-[0_0_12px_rgba(0,221,255,.9)]" /> Secure workspace access
-          </div>
-          <h2 className="text-4xl font-semibold leading-[1.08] tracking-[-.04em] xl:text-5xl">Move money with clarity and control.</h2>
-          <p className="mt-5 max-w-md text-sm leading-6 text-slate-200/75">A single, secure workspace for the people and payment flows that keep your business moving.</p>
-          <div className="mt-10 flex items-center gap-3 text-xs text-slate-200/60"><span className="h-px w-9 bg-[#00DDFF]" /> VASPAN · PAYMENT SERVICES</div>
+        <div className="relative z-10 max-w-md pb-3">
+          <h2 className="max-w-sm text-4xl font-semibold leading-[1.08] tracking-[-.045em] xl:text-[3.25rem]">Payments, clearly in control.</h2>
+          <p className="mt-4 max-w-sm text-sm leading-6 text-slate-200/75">One workspace for your payment operations.</p>
         </div>
-        <div className="relative z-10 flex items-center justify-between border-t border-white/10 pt-5 text-[11px] text-slate-200/55"><span>Built for confident operations</span><span>© Vaspan</span></div>
+        <span aria-hidden="true" className="pointer-events-none absolute -bottom-28 -right-24 size-80 rounded-full border border-[#00DDFF]/10 bg-[#00DDFF]/[.04] shadow-[0_0_100px_20px_rgba(0,221,255,.08)]" />
       </aside>
 
       <div className="relative flex min-h-[590px] items-center justify-center px-5 py-10 sm:px-10 lg:px-12 xl:px-16">
         <div className="w-full max-w-md">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <Image src="/vaspan-logo.svg" alt="Vaspan" width={112} height={34} className="h-8 w-auto" priority />
-            <span className="text-xs text-muted-foreground">Payment operations</span>
+            <Image src="/vaspan_full_bright.svg" alt="Vaspan" width={150} height={47} className="h-auto w-36 dark:hidden" priority />
+            <Image src="/vaspan_full_dark.svg" alt="Vaspan" width={150} height={47} className="hidden h-auto w-36 dark:block" priority />
           </div>
           {/* <div className="mb-7 flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-[#008a9b] ring-1 ring-cyan-800/10"><LockKeyhole size={21} strokeWidth={1.8} /></div> */}
           <h1 className="text-3xl font-semibold tracking-[-.035em] text-foreground">Welcome back</h1>

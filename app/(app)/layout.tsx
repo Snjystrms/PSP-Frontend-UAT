@@ -9,5 +9,6 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   if (!session?.user) redirect("/login");
   const role = (session.user.role ?? "psp") as Role;
   const userName = session.user.name ?? "Team member";
-  return <AuthUserProvider user={{ role, name: userName }}><AppShell role={role} userName={userName}>{children}</AppShell></AuthUserProvider>;
+  const userEmail = session.user.email ?? "";
+  return <AuthUserProvider user={{ role, name: userName, email: userEmail }}><AppShell role={role} userName={userName} userEmail={userEmail}>{children}</AppShell></AuthUserProvider>;
 }

@@ -3,6 +3,7 @@
 
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   AnimatePresence,
   type HTMLMotionProps,
@@ -42,7 +43,6 @@ type SidebarCollapsible = "offcanvas" | "icon" | "none";
 
 const MOBILE_QUERY = "(max-width: 767px)";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
-const MotionLink = motion.create(Link);
 
 const PANEL_TRANSITION = {
   duration: 0.36,
@@ -232,9 +232,20 @@ export function AnimatedSidebarProvider({
   const desktopOpen = open ?? internalOpen;
   const mobileOpen = openMobile ?? internalOpenMobile;
 
+  useEffect(() => {
+    if (open !== undefined) return;
+    try {
+      const saved = window.localStorage.getItem("vaspan-sidebar-open");
+      if (saved !== null) setInternalOpen(saved === "true");
+    } catch { /* Storage may be unavailable. */ }
+  }, [open]);
+
   const setOpen = useCallback(
     (nextOpen: boolean) => {
-      if (open === undefined) setInternalOpen(nextOpen);
+      if (open === undefined) {
+        setInternalOpen(nextOpen);
+        try { window.localStorage.setItem("vaspan-sidebar-open", String(nextOpen)); } catch { /* Storage may be unavailable. */ }
+      }
       onOpenChange?.(nextOpen);
     },
     [onOpenChange, open],
@@ -316,6 +327,7 @@ function MobileSidebar({
   side: SidebarSide;
 }) {
   const context = useAnimatedSidebar();
+  const pathname = usePathname();
   const panelRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   // The sheet is mounted for as long as the viewport is mobile, so it hides
@@ -328,6 +340,7 @@ function MobileSidebar({
   // The completion callback fires for the open slide too, and it reads state
   // from whenever motion settles: a ref keeps it on the current one.
   const openMobileRef = useRef(context.openMobile);
+  const previousPathname = useRef(pathname);
 
   useEffect(() => setMounted(true), []);
 
@@ -335,6 +348,14 @@ function MobileSidebar({
     openMobileRef.current = context.openMobile;
     if (context.openMobile) setHidden(false);
   }, [context.openMobile]);
+
+  useEffect(() => {
+    if (previousPathname.current === pathname) return;
+    const previousPath = previousPathname.current;
+    previousPathname.current = pathname;
+    console.info("[Sidebar debug] route changed", { from: previousPath, to: pathname });
+    if (context.openMobile) context.setOpenMobile(false);
+  }, [context.openMobile, context.setOpenMobile, pathname]);
 
   useEffect(() => {
     if (!context.openMobile) return;
@@ -948,11 +969,20 @@ export function AnimatedSidebarMenuSubButton({
   className,
 }: AnimatedSidebarMenuSubButtonProps) {
   const context = useAnimatedSidebar();
+  const textLabel = typeof children === "string" ? children : undefined;
 
   const select = (
     event: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>,
   ) => {
+    console.info("[Sidebar debug] submenu click", {
+      label: textLabel,
+      href: href ?? null,
+      button: event.button,
+      detail: event.detail,
+      mobile: context.isMobile,
+    });
     if (disabled) {
+      console.info("[Sidebar debug] click ignored: menu item disabled", { label: textLabel, href: href ?? null });
       event.preventDefault();
       return;
     }
@@ -1045,19 +1075,47 @@ export function AnimatedSidebarMenuButton({
 }: AnimatedSidebarMenuButtonProps) {
   const context = useAnimatedSidebar();
   const panel = useAnimatedSidebarPanel();
+  const pathname = usePathname();
+  const router = useRouter();
   const textLabel = typeof children === "string" ? children : undefined;
 
   const select = (
     event: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>,
   ) => {
+    console.info("[Sidebar debug] menu click", {
+      label: textLabel,
+      href: href ?? null,
+      button: event.button,
+      detail: event.detail,
+      mobile: context.isMobile,
+    });
     if (disabled) {
+      console.info("[Sidebar debug] click ignored: menu item disabled", { label: textLabel, href: href ?? null });
       event.preventDefault();
       return;
+    }
+    if (
+      href &&
+      event.currentTarget instanceof HTMLAnchorElement &&
+      event.button === 0 &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.shiftKey &&
+      !event.altKey &&
+      (!target || target === "_self")
+    ) {
+      event.preventDefault();
+      console.info("[Sidebar debug] router.push", { href });
+      router.push(href);
     }
     onSelect?.();
     const shouldCloseOnSelect =
       closeOnSelect ?? ariaExpanded === undefined;
-    if (context.isMobile && shouldCloseOnSelect) {
+    // Keep the mobile link mounted until Next has handled its navigation.
+    // Closing the animated sheet during Link's click event can detach the
+    // anchor before the router consumes the first tap on touch devices.
+    if (context.isMobile && shouldCloseOnSelect && (!href || href === pathname)) {
+      console.info("[Sidebar debug] closing mobile menu after selection", { href: href ?? null });
       context.setOpenMobile(false);
     }
     // A submenu cannot render in the icon rail, so opening one from there
@@ -1141,7 +1199,7 @@ export function AnimatedSidebarMenuButton({
   );
 
   return href ? (
-    <MotionLink
+    <Link
       href={href}
       target={target}
       rel={
@@ -1154,13 +1212,12 @@ export function AnimatedSidebarMenuButton({
       aria-label={panel.collapsed ? textLabel : undefined}
       title={panel.collapsed ? textLabel : undefined}
       tabIndex={disabled ? -1 : undefined}
+      onPointerDown={(event) => console.info("[Sidebar debug] pointer down", { label: textLabel, href, pointerType: event.pointerType })}
       onClick={select}
-      whileTap={context.reduce || disabled ? undefined : { scale: 0.98 }}
-      transition={SPRING_PRESS}
-      className={interactiveClassName}
+      className={cn(interactiveClassName, "active:scale-[0.98]")}
     >
       {content}
-    </MotionLink>
+    </Link>
   ) : (
     <motion.button
       type="button"

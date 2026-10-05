@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { fetchRequestDetail, fetchRequestPage, fetchRequests, markRequestProcessing, resendRequestCallback, reverseRequest, updateRequestStatus, type PortalRequestFilters } from "@/lib/api/backend";
+import { createPortalRequest, fetchRequestDetail, fetchRequestPage, fetchRequests, markRequestProcessing, resendRequestCallback, reverseRequest, updateRequestStatus, type PortalRequestFilters } from "@/lib/api/backend";
 import type { RequestKind, RequestStatus } from "@/lib/types";
 
 export function useRequests(kind?: RequestKind) {
@@ -10,6 +10,18 @@ export function useRequests(kind?: RequestKind) {
 }
 export function useRequestPage(kind: RequestKind, filters: PortalRequestFilters) {
   return useQuery({ queryKey: ["request-page", kind, filters], queryFn: () => fetchRequestPage(kind, filters), placeholderData: (previous) => previous, refetchInterval: 30_000, refetchOnWindowFocus: true });
+}
+export function useCreatePortalRequest(kind: RequestKind) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (formData: FormData) => createPortalRequest(kind, formData),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["requests"] });
+      void client.invalidateQueries({ queryKey: ["request-page", kind] });
+      toast.success(`${kind === "deposit" ? "Deposit" : "Withdrawal"} request created.`);
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not create this request."),
+  });
 }
 
 export function useRequestDetail(id: string | null, kind: RequestKind) {

@@ -32,9 +32,13 @@ type BackendTransaction = {
 type BackendPage = { items: BackendTransaction[]; total: number };
 
 async function backendRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  if (!(init?.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
   const response = await fetch(`/api/backend/${path.replace(/^\//, "")}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers,
   });
   const raw = await response.text();
   let body: unknown = null;
@@ -107,6 +111,14 @@ export async function fetchRequestPage(kind: RequestKind, filters: PortalRequest
   return { ...page, items: page.items.map((row) => mapTransaction(row, kind)) };
 }
 
+export async function createPortalRequest(kind: RequestKind, formData: FormData) {
+  const row = await backendRequest<BackendTransaction>(`portal/${kind}s`, {
+    method: "POST",
+    body: formData,
+  });
+  return mapTransaction(row, kind);
+}
+
 export async function fetchRequestDetail(id: string, kind: RequestKind) {
   const row = await backendRequest<BackendTransaction>(`portal/${kind}s/${encodeURIComponent(id)}`);
   return { ...mapTransaction(row, kind), screenshotUrl: row.screenshot_url, utrNumber: row.utr_number, reviewedBy: row.reviewed_by, reviewedAt: row.reviewed_at, callbackLastError: row.callback_last_error, callbackSentAt: row.callback_sent_at, callbackAttempts: row.callback_attempts ?? 0 };
@@ -146,16 +158,10 @@ export async function reverseRequest(id: string, kind: RequestKind, reason: stri
 export type BackendPsp = {
   psp_code: string;
   psp_name: string;
-  status: string;
-  callback_url: string;
-  callback_username?: string;
-  bank_accounts: string[];
-  allowed_currencies: string[];
+  status: "active" | "inactive";
   ifsc_code: string | null;
   account_number: string | null;
   contact_email: string | null;
-  contacts?: Record<string, { email?: string; phone?: string; hours?: string }>;
-  has_client_public_key?: boolean;
   api_token_expires_at: string;
   credentials_rotated_at?: string | null;
   prev_valid_until?: string | null;
@@ -184,14 +190,21 @@ export type PspCreated = {
 export type PspCredentials = PspCreated["credentials"];
 
 export type PspCreatePayload = {
-  psp_name: string; callback_url: string; callback_username: string; callback_password: string;
-  bank_accounts: string[]; allowed_currencies: string[]; login_email: string; login_password: string;
-  ifsc_code?: string; account_number?: string; contact_email?: string;
-  contacts?: Record<string, { email?: string; phone?: string; hours?: string }>;
-  client_public_key?: string;
+  psp_name: string;
+  account_number: string;
+  login_email: string;
+  login_password: string;
+  ifsc_code?: string;
+  contact_email?: string;
 };
 
-export type PspUpdatePayload = Partial<Omit<PspCreatePayload, "login_email" | "login_password">> & { status?: "active" | "inactive" };
+export type PspUpdatePayload = {
+  psp_name?: string;
+  account_number?: string;
+  ifsc_code?: string | null;
+  contact_email?: string | null;
+  status?: "active" | "inactive";
+};
 
 export async function fetchPsps(): Promise<BackendPsp[]> {
   const result = await backendRequest<{ psps: BackendPsp[] }>("psps");
@@ -211,10 +224,6 @@ export async function fetchAuditLogs(filters: { action?: string; target?: string
   const query = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => { if (value !== undefined && value !== "") query.set(key, String(value)); });
   return backendRequest<{ items: Array<{ id: number; created_at: string; actor_type: string; actor_id: string; action: string; target: string | null; details: Record<string, unknown> | null; ip_address?: string | null }> }>(`audit-logs?${query}`);
-}
-
-export async function fetchQuestionnaire(pspCode: string) {
-  return backendRequest<{ psp_name: string; answers: Array<{ no: string; question: string; answer: string }> }>(`psps/${encodeURIComponent(pspCode)}/questionnaire`);
 }
 
 export async function fetchSystemHealth() {

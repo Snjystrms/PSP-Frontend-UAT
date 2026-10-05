@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Activity, ArrowDownToLine, ArrowUpFromLine, Building2, ChevronDown, ClipboardList, LayoutDashboard, LogOut, MessageCircle, PanelLeft, Users } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Building2, ClipboardList, LayoutDashboard, LogOut, MessageCircle, PanelLeft, Users } from "lucide-react";
 import { AnimatedSidebar, AnimatedSidebarContent, AnimatedSidebarFooter, AnimatedSidebarGroup, AnimatedSidebarGroupContent, AnimatedSidebarGroupLabel, AnimatedSidebarHeader, AnimatedSidebarInset, AnimatedSidebarMenu, AnimatedSidebarMenuButton, AnimatedSidebarMenuItem, AnimatedSidebarProvider, AnimatedSidebarTrigger, useAnimatedSidebar } from "@/components/motion/animated-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -44,7 +44,27 @@ function Brand() {
   );
 }
 
-export function AppShell({ children, role, userName }: { children: React.ReactNode; role: Role; userName: string }) {
+function SidebarSignOut({ onSignOut }: { onSignOut: () => void }) {
+  const { state, isMobile } = useAnimatedSidebar();
+  const compact = state === "collapsed" && !isMobile;
+  return <Button variant="ghost" className={`w-full ${compact ? "justify-center px-0" : "justify-start"}`} onClick={onSignOut} aria-label="Sign out" title={compact ? "Sign out" : undefined}>
+    <LogOut className="size-4 shrink-0" />{!compact && <span>Sign out</span>}
+  </Button>;
+}
+
+function ProfileInfo({ name, email, role }: { name: string; email: string; role: Role }) {
+  const initials = name.trim().split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase() || "U";
+  return <div className="flex min-w-0 items-center gap-2.5 border-l border-border pl-3 sm:gap-3 sm:pl-4">
+    <Avatar className="size-9 shrink-0"><AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">{initials}</AvatarFallback></Avatar>
+    <div className="min-w-0 leading-tight">
+      <p className="max-w-24 truncate text-xs font-semibold sm:max-w-48">{name}</p>
+      <p className="hidden max-w-48 truncate text-[11px] text-muted-foreground sm:block">{email}</p>
+      <p className="mt-1 text-[9px] font-semibold uppercase tracking-[.14em] text-primary">{role}</p>
+    </div>
+  </div>;
+}
+
+export function AppShell({ children, role, userName, userEmail }: { children: React.ReactNode; role: Role; userName: string; userEmail: string }) {
   const pathname = usePathname();
   const current = navigation.find((item) => item.href === pathname)?.label ?? "Workspace";
   async function handleSignOut() {
@@ -59,14 +79,16 @@ export function AppShell({ children, role, userName }: { children: React.ReactNo
         </AnimatedSidebarHeader>
         <AnimatedSidebarContent>
           <AnimatedSidebarGroup><AnimatedSidebarGroupLabel>Workspace</AnimatedSidebarGroupLabel><AnimatedSidebarGroupContent><NavItems role={role} /></AnimatedSidebarGroupContent></AnimatedSidebarGroup>
-          <div className="mx-3 mt-auto rounded-2xl border border-border bg-card p-3 group-data-[state=collapsed]/sidebar-wrapper:hidden"><div className="mb-2 flex items-center gap-2 text-xs font-semibold"><Activity className="size-3.5 text-emerald-500" />All systems operational</div><p className="text-[11px] leading-4 text-muted-foreground">Transfers and settlement queues are processing normally.</p></div>
+          {/* <div className="mx-3 mt-auto rounded-2xl border border-border bg-card p-3 group-data-[state=collapsed]/sidebar-wrapper:hidden"><div className="mb-2 flex items-center gap-2 text-xs font-semibold"><Activity className="size-3.5 text-emerald-500" />All systems operational</div><p className="text-[11px] leading-4 text-muted-foreground">Transfers and settlement queues are processing normally.</p></div> */}
         </AnimatedSidebarContent>
-        <AnimatedSidebarFooter><div className="flex items-center gap-2 px-1"><Avatar className="size-8"><AvatarFallback>{userName.split(" ").map((part) => part[0]).slice(0, 2).join("")}</AvatarFallback></Avatar><div className="min-w-0 flex-1 group-data-[state=collapsed]/sidebar-wrapper:hidden"><p className="truncate text-xs font-medium">{userName}</p><p className="text-[10px] capitalize text-muted-foreground">{role} account</p></div><ChevronDown className="size-3 text-muted-foreground group-data-[state=collapsed]/sidebar-wrapper:hidden" /></div></AnimatedSidebarFooter>
+        <AnimatedSidebarFooter><SidebarSignOut onSignOut={() => void handleSignOut()} /></AnimatedSidebarFooter>
       </AnimatedSidebar>
       <AnimatedSidebarInset>
         <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur-xl sm:px-7">
           <div className="flex items-center gap-3"><AnimatedSidebarTrigger className="border border-border bg-background shadow-xs hover:bg-accent" aria-label="Toggle sidebar"><PanelLeft className="size-4" /></AnimatedSidebarTrigger><div className="hidden h-5 border-l border-border sm:block" /><div><p className="text-sm font-semibold">{current}</p><p className="hidden text-xs text-muted-foreground sm:block">Payment operations / {current}</p></div></div>
-          <div className="flex items-center gap-2"><span className="hidden rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 sm:inline-flex">Live workspace</span><ThemeToggle /><Button variant="outline" size="icon" aria-label="Sign out" onClick={() => void handleSignOut()}><LogOut className="size-4" /></Button></div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* <span className="hidden rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 sm:inline-flex">Live workspace</span> */}
+            <ThemeToggle /><ProfileInfo name={userName} email={userEmail} role={role} /></div>
         </header>
         <main className="ib-portal-shell min-h-[calc(100svh-72px)] flex-1 p-4 sm:p-7 lg:p-9">{children}</main>
       </AnimatedSidebarInset>

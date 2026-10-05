@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { createPsp, deletePsp, fetchPsps, fetchQuestionnaire, rotatePspCredentials, updatePsp, type PspCreatePayload, type PspCredentials, type PspUpdatePayload } from "@/lib/api/backend";
+import { createPsp, deletePsp, fetchPsps, rotatePspCredentials, updatePsp, type PspCreatePayload, type PspCredentials, type PspUpdatePayload } from "@/lib/api/backend";
 
 export function usePsps(enabled = true) {
   return useQuery({ queryKey: ["psps"], queryFn: fetchPsps, enabled });
@@ -26,8 +26,4 @@ export function useDeletePsp() {
 export function useRotatePspCredentials() {
   const client = useQueryClient();
   return useMutation({ mutationFn: ({ code, grace_hours, rotate_salt }: { code: string; grace_hours?: number; rotate_salt?: boolean }) => rotatePspCredentials(code, { grace_hours, rotate_salt }), onSuccess: () => { void client.invalidateQueries({ queryKey: ["psps"] }); toast.success("New credentials issued. Copy and store them now."); }, onError: (error) => toast.error(error instanceof Error ? error.message : "Could not rotate credentials.") });
-}
-
-export function usePspQuestionnaire(code: string | null) {
-  return useQuery({ queryKey: ["psp-questionnaire", code], queryFn: () => fetchQuestionnaire(code!), enabled: Boolean(code) });
 }
