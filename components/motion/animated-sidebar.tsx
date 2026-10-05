@@ -3,7 +3,7 @@
 
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   AnimatePresence,
   type HTMLMotionProps,
@@ -351,9 +351,7 @@ function MobileSidebar({
 
   useEffect(() => {
     if (previousPathname.current === pathname) return;
-    const previousPath = previousPathname.current;
     previousPathname.current = pathname;
-    console.info("[Sidebar debug] route changed", { from: previousPath, to: pathname });
     if (context.openMobile) context.setOpenMobile(false);
   }, [context.openMobile, context.setOpenMobile, pathname]);
 
@@ -1076,7 +1074,6 @@ export function AnimatedSidebarMenuButton({
   const context = useAnimatedSidebar();
   const panel = useAnimatedSidebarPanel();
   const pathname = usePathname();
-  const router = useRouter();
   const textLabel = typeof children === "string" ? children : undefined;
 
   const select = (
@@ -1093,20 +1090,6 @@ export function AnimatedSidebarMenuButton({
       console.info("[Sidebar debug] click ignored: menu item disabled", { label: textLabel, href: href ?? null });
       event.preventDefault();
       return;
-    }
-    if (
-      href &&
-      event.currentTarget instanceof HTMLAnchorElement &&
-      event.button === 0 &&
-      !event.metaKey &&
-      !event.ctrlKey &&
-      !event.shiftKey &&
-      !event.altKey &&
-      (!target || target === "_self")
-    ) {
-      event.preventDefault();
-      console.info("[Sidebar debug] router.push", { href });
-      router.push(href);
     }
     onSelect?.();
     const shouldCloseOnSelect =

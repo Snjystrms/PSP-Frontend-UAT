@@ -7,6 +7,7 @@ import {
   type HTMLAttributes,
   type ReactNode,
   useCallback,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -50,8 +51,10 @@ export const SharedLayoutBg = forwardRef<HTMLElement, SharedLayoutBgProps>(
     forwardedRef,
   ) {
     const containerRef = useRef<HTMLElement | null>(null);
+    const hoveredItemRef = useRef<HTMLElement | null>(null);
     const [rect, setRect] = useState<PillRect | null>(null);
     const [visible, setVisible] = useState(false);
+    const MotionTag = useMemo(() => motion.create(Tag), [Tag]);
 
     const setRefs = useCallback(
       (node: HTMLElement | null) => {
@@ -71,9 +74,14 @@ export const SharedLayoutBg = forwardRef<HTMLElement, SharedLayoutBgProps>(
           '[data-slot="sidebar-menu-item"]',
         );
         if (!target || !container.contains(target)) {
-          setVisible(false);
+          if (hoveredItemRef.current) {
+            hoveredItemRef.current = null;
+            setVisible(false);
+          }
           return;
         }
+        if (hoveredItemRef.current === target) return;
+        hoveredItemRef.current = target;
         const c = container.getBoundingClientRect();
         const t = target.getBoundingClientRect();
         setRect({
@@ -90,12 +98,11 @@ export const SharedLayoutBg = forwardRef<HTMLElement, SharedLayoutBgProps>(
     const handlePointerLeave = useCallback(
       (event: React.PointerEvent<HTMLElement>) => {
         onPointerLeave?.(event);
+        hoveredItemRef.current = null;
         setVisible(false);
       },
       [onPointerLeave],
     );
-
-    const MotionTag = motion.create(Tag);
 
     return (
       <MotionTag

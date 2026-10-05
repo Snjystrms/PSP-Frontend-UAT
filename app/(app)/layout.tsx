@@ -10,5 +10,5 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   const role = (session.user.role ?? "psp") as Role;
   const userName = session.user.name ?? "Team member";
   const userEmail = session.user.email ?? "";
-  return <AuthUserProvider user={{ role, name: userName, email: userEmail }}><AppShell role={role} userName={userName} userEmail={userEmail}>{children}</AppShell></AuthUserProvider>;
+  return <AuthUserProvider user={{ id: session.user.id ?? "", role, name: userName, email: userEmail, pspCode: session.user.pspCode }}><AppShell role={role} userName={userName} userEmail={userEmail}>{children}</AppShell></AuthUserProvider>;
 }

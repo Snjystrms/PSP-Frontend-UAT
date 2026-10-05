@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type DateRangePickerProps = {
   fromDate: string;
@@ -42,7 +43,8 @@ function CalendarField({ label, value, min, max, disabled, onChange }: {
   const days = Array.from({ length: 42 }, (_, index) => new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index));
   const minDate = parseDate(min ?? "");
   const maxDate = parseDate(max ?? "");
-  const monthLabel = new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(viewMonth);
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 1989 + 11 }, (_, index) => 1990 + index);
   const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
   return (
@@ -56,9 +58,18 @@ function CalendarField({ label, value, min, max, disabled, onChange }: {
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[min(19rem,calc(100vw-2rem))] p-3">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between gap-1">
             <Button variant="ghost" size="icon-sm" aria-label="Previous month" onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}><ChevronLeft className="size-4" /></Button>
-            <span className="text-sm font-semibold">{monthLabel}</span>
+            <div className="flex min-w-0 items-center gap-1">
+              <Select value={String(viewMonth.getMonth())} onValueChange={(month) => setViewMonth(new Date(viewMonth.getFullYear(), Number(month), 1))}>
+                <SelectTrigger aria-label="Choose month" className="h-8 w-[7.5rem] border-transparent bg-transparent px-2 font-semibold shadow-none"><SelectValue /></SelectTrigger>
+                <SelectContent align="center">{Array.from({ length: 12 }, (_, month) => <SelectItem key={month} value={String(month)}>{new Intl.DateTimeFormat("en", { month: "long" }).format(new Date(2024, month, 1))}</SelectItem>)}</SelectContent>
+              </Select>
+              <Select value={String(viewMonth.getFullYear())} onValueChange={(year) => setViewMonth(new Date(Number(year), viewMonth.getMonth(), 1))}>
+                <SelectTrigger aria-label="Choose year" className="h-8 w-[5.5rem] border-transparent bg-transparent px-2 font-semibold shadow-none"><SelectValue /></SelectTrigger>
+                <SelectContent align="center">{years.map((year) => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
             <Button variant="ghost" size="icon-sm" aria-label="Next month" onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}><ChevronRight className="size-4" /></Button>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { SerialNumberCell } from "@/components/ui/serial-number-cell";
 import { TablePagination } from "@/components/ui/table-pagination";
+import { RequestProofPreview } from "@/components/requests/request-proof-preview";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRequestDetail, useRequestPage } from "@/lib/queries/requests";
@@ -50,6 +51,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
   const [decision, setDecision] = useState<{ row: PaymentRequest; status: "approved" | "rejected" | "reversed" } | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [createPspCode, setCreatePspCode] = useState("all");
   const createRequest = useCreatePortalRequest(kind);
   const detailQuery = useRequestDetail(detailId, kind);
@@ -70,7 +72,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
     if (createPspCode === "all") return;
     const formData = new FormData(event.currentTarget);
     formData.set("psp_code", createPspCode);
-    createRequest.mutate(formData, { onSuccess: () => setCreateOpen(false) });
+    createRequest.mutate(formData, { onSuccess: () => { setCreateOpen(false); setScreenshotFile(null); } });
   };
 
   return <>
@@ -102,7 +104,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
       </tbody></table></div>}
       <TablePagination total={page?.total ?? 0} pageIndex={Math.floor(offset / pageSize)} pageSize={pageSize} onPageChange={(pageIndex) => setOffset(pageIndex * pageSize)} onPageSizeChange={(size) => { setPageSize(size); setOffset(0); }} />
     </section>
-    <Dialog open={createOpen} onOpenChange={(open) => { if (!createRequest.isPending) setCreateOpen(open); }}>
+    <Dialog open={createOpen} onOpenChange={(open) => { if (!createRequest.isPending) { setCreateOpen(open); if (!open) setScreenshotFile(null); } }}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader><DialogTitle>Create {kind} request</DialogTitle><DialogDescription>Submit a request on behalf of a PSP. It will appear in the review queue.</DialogDescription></DialogHeader>
         <form id="create-payment-request" className="grid gap-4 sm:grid-cols-2" onSubmit={submitNewRequest}>
@@ -116,7 +118,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
             <Select name="currency" defaultValue="INR"><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent>{["INR", "USD", "EUR"].map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent></Select>
           </label>}
           {kind === "deposit" ? <>
-            <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">Payment screenshot<input name="screenshot" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" required className="block w-full cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm file:font-medium" /></label>
+            <div className="grid gap-2 text-sm font-medium sm:col-span-2"><label className="grid gap-1.5">Payment screenshot<input name="screenshot" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" required onChange={(event) => setScreenshotFile(event.target.files?.[0] ?? null)} className="block w-full cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm file:font-medium" /></label>{screenshotFile && <RequestProofPreview file={screenshotFile} />}</div>
             <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">UTR number (optional)<Input name="utr_number" maxLength={100} /></label>
           </> : <>
             <label className="grid gap-1.5 text-sm font-medium">Destination bank<Input name="dest_bank_name" maxLength={200} /></label>
@@ -135,6 +137,6 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
         <DialogFooter><Button variant="outline" onClick={() => setDecision(null)} disabled={mutation.isPending || reverseMutation.isPending}>Cancel</Button><Button onClick={submitDecision} disabled={mutation.isPending || reverseMutation.isPending || ((decision?.status === "rejected" || decision?.status === "reversed") && !reason.trim())}>{mutation.isPending || reverseMutation.isPending ? "Submitting…" : decision?.status === "approved" ? "Confirm approval" : decision?.status === "reversed" ? "Confirm reversal" : "Confirm rejection"}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
-    <Dialog open={Boolean(detailId)} onOpenChange={(open) => { if (!open) setDetailId(null); }}><DialogContent className="max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>Request details</DialogTitle><DialogDescription>{detailQuery.data?.id ?? detailId}</DialogDescription></DialogHeader>{detailQuery.isLoading ? <p className="py-6 text-center text-sm text-muted-foreground">Loading request details…</p> : detailQuery.isError ? <p role="alert" className="text-sm text-destructive">{detailQuery.error instanceof Error ? detailQuery.error.message : "Could not load details."}</p> : detailQuery.data && <div className="grid gap-3 sm:grid-cols-2">{[["Customer", detailQuery.data.clientName], ["Email", detailQuery.data.clientId], ["Amount", money(detailQuery.data.amount, detailQuery.data.currency)], ["Status", detailQuery.data.status], ["Reference", detailQuery.data.reference], ["PSP", detailQuery.data.pspCode ?? "—"], ["Submitted", date(detailQuery.data.createdAt)], ["Reviewed by", detailQuery.data.reviewedBy ?? "—"], ["Reviewed at", detailQuery.data.reviewedAt ? date(detailQuery.data.reviewedAt) : "—"], ["Review comment", detailQuery.data.comment ?? "—"], ["Callback attempts", String(detailQuery.data.callbackAttempts)], ["Callback status", detailQuery.data.callbackSentAt ? `Sent ${date(detailQuery.data.callbackSentAt)}` : detailQuery.data.callbackFailed ? "Failed" : "Not sent"]].map(([label, value]) => <div key={label} className="rounded-lg border border-border p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 break-words text-sm font-medium">{value}</p></div>)}{detailQuery.data.callbackLastError && <p className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-sm text-rose-700 dark:text-rose-300 sm:col-span-2">Callback error: {detailQuery.data.callbackLastError}</p>}{detailQuery.data.screenshotUrl && <a className="text-sm text-primary underline sm:col-span-2" href={detailQuery.data.screenshotUrl} target="_blank" rel="noreferrer">Open deposit proof</a>}{detailQuery.data.utrNumber && <p className="text-sm sm:col-span-2">UTR: {detailQuery.data.utrNumber}</p>}</div>}<DialogFooter><Button variant="outline" onClick={() => setDetailId(null)}>Close</Button></DialogFooter></DialogContent></Dialog>
+    <Dialog open={Boolean(detailId)} onOpenChange={(open) => { if (!open) setDetailId(null); }}><DialogContent className="max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>Request details</DialogTitle><DialogDescription>{detailQuery.data?.id ?? detailId}</DialogDescription></DialogHeader>{detailQuery.isLoading ? <p className="py-6 text-center text-sm text-muted-foreground">Loading request details…</p> : detailQuery.isError ? <p role="alert" className="text-sm text-destructive">{detailQuery.error instanceof Error ? detailQuery.error.message : "Could not load details."}</p> : detailQuery.data && <div className="grid gap-3 sm:grid-cols-2">{[["Customer", detailQuery.data.clientName], ["Email", detailQuery.data.clientId], ["Amount", money(detailQuery.data.amount, detailQuery.data.currency)], ["Status", detailQuery.data.status], ["Reference", detailQuery.data.reference], ["PSP", detailQuery.data.pspCode ?? "—"], ["Submitted", date(detailQuery.data.createdAt)], ["Reviewed by", detailQuery.data.reviewedBy ?? "—"], ["Reviewed at", detailQuery.data.reviewedAt ? date(detailQuery.data.reviewedAt) : "—"], ["Review comment", detailQuery.data.comment ?? "—"], ["Callback attempts", String(detailQuery.data.callbackAttempts)], ["Callback status", detailQuery.data.callbackSentAt ? `Sent ${date(detailQuery.data.callbackSentAt)}` : detailQuery.data.callbackFailed ? "Failed" : "Not sent"]].map(([label, value]) => <div key={label} className="rounded-lg border border-border p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 break-words text-sm font-medium">{value}</p></div>)}{detailQuery.data.callbackLastError && <p className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-sm text-rose-700 dark:text-rose-300 sm:col-span-2">Callback error: {detailQuery.data.callbackLastError}</p>}{detailQuery.data.screenshotUrl && <RequestProofPreview url={detailQuery.data.screenshotUrl} />}{detailQuery.data.utrNumber && <p className="text-sm sm:col-span-2">UTR: {detailQuery.data.utrNumber}</p>}</div>}<DialogFooter><Button variant="outline" onClick={() => setDetailId(null)}>Close</Button></DialogFooter></DialogContent></Dialog>
   </>;
 }

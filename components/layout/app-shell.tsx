@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ArrowDownToLine, ArrowUpFromLine, Building2, ClipboardList, LayoutDashboard, LogOut, MessageCircle, PanelLeft, Users } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Building2, ClipboardList, LayoutDashboard, LogOut, MessageCircle, PanelLeft, UserRound, Users } from "lucide-react";
 import { AnimatedSidebar, AnimatedSidebarContent, AnimatedSidebarFooter, AnimatedSidebarGroup, AnimatedSidebarGroupContent, AnimatedSidebarGroupLabel, AnimatedSidebarHeader, AnimatedSidebarInset, AnimatedSidebarMenu, AnimatedSidebarMenuButton, AnimatedSidebarMenuItem, AnimatedSidebarProvider, AnimatedSidebarTrigger, useAnimatedSidebar } from "@/components/motion/animated-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -18,6 +19,7 @@ const navigation = [
   { label: "Portal users", href: "/users", icon: Users, roles: ["admin"] },
   { label: "Audit & system", href: "/audit", icon: ClipboardList, roles: ["admin"] },
   { label: "Support chat", href: "/chat", icon: MessageCircle, roles: ["admin", "psp"] },
+  { label: "My profile", href: "/profile", icon: UserRound, roles: ["admin", "psp"] },
 ] as const;
 
 function NavItems({ role }: { role: Role }) {
@@ -66,6 +68,13 @@ function ProfileInfo({ name, email, role }: { name: string; email: string; role:
 
 export function AppShell({ children, role, userName, userEmail }: { children: React.ReactNode; role: Role; userName: string; userEmail: string }) {
   const pathname = usePathname();
+  const previousPathname = useRef(pathname);
+  useEffect(() => {
+    if (previousPathname.current === pathname) return;
+    const previous = previousPathname.current;
+    previousPathname.current = pathname;
+    console.info("[Sidebar debug] route changed", { from: previous, to: pathname });
+  }, [pathname]);
   const current = navigation.find((item) => item.href === pathname)?.label ?? "Workspace";
   async function handleSignOut() {
     await fetch("/api/auth/logout", { method: "POST", cache: "no-store" });

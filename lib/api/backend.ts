@@ -250,6 +250,13 @@ export async function fetchPortalPublicKey() {
   return backendRequest<string>("meta/public-key");
 }
 
+export async function changeCurrentPassword(payload: { current_password: string; new_password: string }) {
+  return backendRequest<{ success: boolean; message: string }>("auth/change-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function createPortalUser(payload: { email: string; full_name: string; password: string; role: "admin" | "psp"; psp_code?: string }) {
   return backendRequest<PortalUser>("users", { method: "POST", body: JSON.stringify(payload) });
 }
