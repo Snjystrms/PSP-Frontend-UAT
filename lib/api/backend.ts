@@ -46,7 +46,7 @@ async function backendRequest<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     const errorBody = body as { message?: string; error?: string } | null;
     const message = errorBody?.message ?? errorBody?.error ?? `Backend request failed (${response.status})`;
-    throw new Error(message);
+    throw new Error(`HTTP ${response.status}: ${message}`);
   }
   return body as T;
 }

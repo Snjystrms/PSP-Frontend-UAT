@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { toast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
 
 export function LoginForm() {
@@ -11,12 +12,10 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
   const [isBusy, setIsBusy] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("");
     setIsBusy(true);
 
     try {
@@ -32,7 +31,7 @@ export function LoginForm() {
       const payload = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        setError(payload?.message || "We couldn’t sign you in. Check your email and password, and confirm the payment service is available.");
+        toast.error(`HTTP ${response.status}: ${payload?.message || "We couldn’t sign you in. Check your email and password, and confirm the payment service is available."}`);
         return;
       }
 
@@ -40,7 +39,7 @@ export function LoginForm() {
       router.refresh();
     } catch (cause) {
       console.error("[Vaspan login] request failed", cause instanceof Error ? cause.message : "Unknown error");
-      setError("We couldn’t sign you in. Check your email and password, and confirm the payment service is available.");
+      toast.error("Couldn’t reach the payment service. Please try again.");
     } finally {
       setIsBusy(false);
     }
@@ -86,7 +85,6 @@ export function LoginForm() {
                 </button>
               </div>
             </div>
-            {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-5 text-rose-700">{error}</p>}
             <button type="submit" disabled={isBusy} className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#00DDFF] px-5 text-sm font-semibold text-[#092126] shadow-[0_8px_24px_-8px_rgba(0,221,255,.5)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#25E2FF] hover:shadow-[0_12px_30px_-8px_rgba(0,221,255,.65)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#00DDFF]/30 disabled:cursor-wait disabled:opacity-70">
               {isBusy ? "Signing in…" : <>Sign in <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" /></>}
             </button>

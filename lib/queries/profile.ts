@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { changeCurrentPassword } from "@/lib/api/backend";
 
 export function useChangeCurrentPassword() {

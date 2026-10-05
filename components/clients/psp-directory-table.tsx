@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { Building2, Clipboard, Pencil, Plus, RefreshCw, RotateCw, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,7 +19,7 @@ function CopyValue({ label, value }: { label: string; value: string }) {
 }
 
 export function PspDirectoryTable() {
-  const { data = [], isLoading, isError, error, refetch } = usePsps();
+  const { data = [], isLoading, isError, refetch } = usePsps();
   const create = useCreatePsp();
   const update = useUpdatePsp();
   const remove = useDeletePsp();
@@ -90,7 +90,7 @@ export function PspDirectoryTable() {
   return <>
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex flex-col gap-4 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold">PSP partners</h2><p className="mt-1 text-sm text-muted-foreground">Manage partner settlement accounts and portal access.</p></div><div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => void refetch()}><RefreshCw className="mr-2 size-3.5" />Refresh</Button><Button size="sm" onClick={openCreate}><Plus className="mr-2 size-4" />Add PSP</Button></div></div>
-      {isError ? <div className="p-10 text-center"><p className="font-medium">Couldn’t load PSPs</p><p className="mt-1 text-sm text-muted-foreground">{error instanceof Error ? error.message : "The backend is unavailable."}</p><Button variant="outline" size="sm" className="mt-4" onClick={() => void refetch()}>Try again</Button></div> :
+      {isError ? <div className="p-10 text-center"><Button variant="outline" size="sm" onClick={() => void refetch()}>Try again</Button></div> :
         <div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-left text-sm"><thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground"><tr>{["#", "Partner", "Status", "Settlement account", "IFSC", "Contact", "Token expires", "Credentials rotated", "Actions"].map((heading) => <th key={heading} className="px-4 py-3 font-medium">{heading}</th>)}</tr></thead><tbody className="divide-y divide-border">
           {isLoading ? <tr><td colSpan={9} className="p-10 text-center text-muted-foreground">Loading partner accounts…</td></tr> : visibleRows.map((psp, index) => <tr key={psp.psp_code} className="transition-colors hover:bg-muted/25"><td className="px-4 py-4"><SerialNumberCell serialNumber={pageIndex * pageSize + index + 1} /></td><td className="px-4 py-4"><span className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary"><Building2 className="size-4" /></span><span><span className="block font-medium">{psp.psp_name}</span><span className="font-mono text-xs text-muted-foreground">{psp.psp_code}</span></span></span></td><td className="px-4 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${psp.status === "active" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>{psp.status}</span></td><td className="px-4 py-4 font-mono text-xs">{psp.account_number || "—"}</td><td className="px-4 py-4 font-mono text-xs">{psp.ifsc_code || "—"}</td><td className="px-4 py-4 text-muted-foreground">{psp.contact_email || "—"}</td><td className="px-4 py-4 text-muted-foreground">{dateValue(psp.api_token_expires_at)}</td><td className="px-4 py-4 text-muted-foreground">{dateValue(psp.credentials_rotated_at)}</td><td className="px-4 py-4"><div className="flex items-center gap-1"><Button variant="ghost" size="icon-sm" aria-label={`Edit ${psp.psp_name}`} title="Edit configuration" onClick={() => void openEdit(psp)}><Pencil className="size-4" /></Button><Button variant="ghost" size="icon-sm" aria-label={`Rotate credentials for ${psp.psp_name}`} title="Rotate API credentials" onClick={() => { setRotating(psp); setGraceHours(""); setRotateSalt(false); }}><RotateCw className="size-4" /></Button><Button variant="ghost" size="icon-sm" aria-label={`Delete ${psp.psp_name}`} title="Delete PSP" disabled={remove.isPending} onClick={() => confirmDelete(psp)}><Trash2 className="size-4 text-destructive" /></Button></div></td></tr>)}
           {!isLoading && data.length === 0 && <tr><td colSpan={9} className="px-5 py-12 text-center text-muted-foreground">No PSP partners have been configured.</td></tr>}

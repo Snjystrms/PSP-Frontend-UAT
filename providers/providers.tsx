@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { ThemeProvider, useTheme } from "next-themes";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "sonner";
+import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { toast } from "@/components/ui/toast";
+import { Toaster } from "@/components/ui/sonner";
 
 function ThemeBridge() {
   const { resolvedTheme } = useTheme();
@@ -15,13 +16,16 @@ function ThemeBridge() {
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [client] = useState(() => new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } } }));
+  const [client] = useState(() => new QueryClient({
+    queryCache: new QueryCache({ onError: (error) => toast.error(error instanceof Error ? error.message : "Something went wrong while loading data.") }),
+    defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
+  }));
   return (
     <QueryClientProvider client={client}>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
         <ThemeBridge />
         {children}
-        <Toaster richColors position="top-right" />
+        <Toaster position="top-right" />
       </ThemeProvider>
     </QueryClientProvider>
   );

@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- Uploaded proof URLs are dynamic and may use arbitrary storage hosts. */
 import { useEffect, useState } from "react";
 import { Download, FileText, Image as ImageIcon, ZoomIn } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 

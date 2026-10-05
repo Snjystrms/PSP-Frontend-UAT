@@ -29,7 +29,7 @@ const summaryCards = [
 
 export function DashboardOverview() {
   const user = useAuthUser();
-  const { data = [], isLoading, isError, error } = useRequests();
+  const { data = [], isLoading, isError } = useRequests();
   const deposits = data.filter((row) => row.kind === "deposit");
   const withdrawals = data.filter((row) => row.kind === "withdrawal");
   const pending = data.filter((row) => row.status === "pending");
@@ -54,7 +54,6 @@ export function DashboardOverview() {
   const activitySeries = depositSeries.map((point, index) => ({ date: point.date, deposits: point.value, withdrawals: withdrawalSeries[index]?.value ?? 0 }));
   return <div className="mx-auto max-w-[1440px] space-y-7">
     <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm text-muted-foreground">Payment operations · Daily overview</p><h1 className="mt-1 text-3xl font-semibold tracking-tight">Welcome, {user?.name.split(" ")[0] ?? "there"} <span aria-hidden>✦</span></h1><p className="mt-2 text-sm text-muted-foreground">Live request activity from the payment operations backend.</p></div><div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs text-muted-foreground"><span className={`size-2 rounded-full ${isError ? "bg-rose-500" : isLoading ? "bg-amber-500" : "bg-emerald-500"}`} />{isError ? "Backend unavailable" : isLoading ? "Connecting to backend" : "Backend connected"}</div></div>
-    {isError && <div role="alert" className="rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">{error instanceof Error ? error.message : "Could not load backend data."}</div>}
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:items-stretch">
       <ProgressMetricCard title="Deposit requests" total={String(values.deposit)} deltaLabel="daily activity" percent={`${deposits.length} total`} unit="requests" data={depositSeries} dateFormatter={(date) => date} size="sm" className="ib-portal-metric xl:col-span-2" loading={isLoading} />
       <ProgressMetricCard title="Withdrawal requests" total={String(values.withdrawal)} deltaLabel="daily activity" percent={`${withdrawals.length} total`} unit="requests" data={withdrawalSeries} dateFormatter={(date) => date} size="sm" className="ib-portal-metric xl:col-span-2" loading={isLoading} />

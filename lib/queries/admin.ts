@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { createPortalUser, fetchAuditLogs, fetchErrorCodes, fetchPortalPublicKey, fetchSystemHealth, fetchUsers, updatePortalUser } from "@/lib/api/backend";
 
 export function usePortalUsers(pspCode?: string) {
