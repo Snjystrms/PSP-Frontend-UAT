@@ -20,6 +20,13 @@ type BackendTransaction = {
   source_account_id?: string;
   callback_sent?: boolean;
   callback_attempts?: number;
+  callback_last_error?: string | null;
+  callback_sent_at?: string | null;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  updated_at?: string;
+  screenshot_url?: string;
+  utr_number?: string | null;
 };
 
 type BackendPage = { items: BackendTransaction[]; total: number };
@@ -29,9 +36,12 @@ async function backendRequest<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers },
   });
-  const body = await response.json().catch(() => null);
+  const raw = await response.text();
+  let body: unknown = null;
+  try { body = raw ? JSON.parse(raw) : null; } catch { body = raw; }
   if (!response.ok) {
-    const message = body?.message ?? body?.error ?? `Backend request failed (${response.status})`;
+    const errorBody = body as { message?: string; error?: string } | null;
+    const message = errorBody?.message ?? errorBody?.error ?? `Backend request failed (${response.status})`;
     throw new Error(message);
   }
   return body as T;
@@ -57,7 +67,7 @@ function mapTransaction(row: BackendTransaction, kind: RequestKind): PaymentRequ
     bankName: row.dest_bank_name,
     bankCode: row.dest_ifsc,
     pspCode: row.psp_code ?? undefined,
-    callbackFailed: (row.status === "approved" || row.status === "rejected") && row.callback_sent === false,
+  callbackFailed: (row.status === "approved" || row.status === "rejected" || row.status === "reversed") && row.callback_sent === false,
     callbackAttempts: row.callback_attempts,
   };
 }
@@ -65,11 +75,44 @@ function mapTransaction(row: BackendTransaction, kind: RequestKind): PaymentRequ
 export async function fetchRequests(kind?: RequestKind): Promise<PaymentRequest[]> {
   const kinds: RequestKind[] = kind ? [kind] : ["deposit", "withdrawal"];
   const pages = await Promise.all(kinds.map(async (type) => {
-    const page = await backendRequest<BackendPage>(`portal/${type}s?limit=200`);
-    return page.items.map((row) => mapTransaction(row, type));
+    const first = await backendRequest<BackendPage & { limit: number; offset: number }>(`portal/${type}s?limit=200&offset=0`);
+    const items = [...first.items];
+    for (let offset = first.limit; offset < first.total; offset += first.limit) {
+      const next = await backendRequest<BackendPage & { limit: number; offset: number }>(`portal/${type}s?limit=${first.limit}&offset=${offset}`);
+      items.push(...next.items);
+    }
+    return items.map((row) => mapTransaction(row, type));
   }));
   return pages.flat().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
+
+export type PortalRequestFilters = {
+  status?: RequestStatus;
+  psp_code?: string;
+  currency?: string;
+  customer?: string;
+  callback_failed?: boolean;
+  date_from?: string;
+  date_to?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export async function fetchRequestPage(kind: RequestKind, filters: PortalRequestFilters = {}) {
+  const query = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== "") query.set(key, String(value));
+  });
+  const page = await backendRequest<BackendPage & { limit: number; offset: number }>(`portal/${kind}s?${query}`);
+  return { ...page, items: page.items.map((row) => mapTransaction(row, kind)) };
+}
+
+export async function fetchRequestDetail(id: string, kind: RequestKind) {
+  const row = await backendRequest<BackendTransaction>(`portal/${kind}s/${encodeURIComponent(id)}`);
+  return { ...mapTransaction(row, kind), screenshotUrl: row.screenshot_url, utrNumber: row.utr_number, reviewedBy: row.reviewed_by, reviewedAt: row.reviewed_at, callbackLastError: row.callback_last_error, callbackSentAt: row.callback_sent_at, callbackAttempts: row.callback_attempts ?? 0 };
+}
+
+export type DetailedPaymentRequest = Awaited<ReturnType<typeof fetchRequestDetail>>;
 
 export async function updateRequestStatus(
   id: string,
@@ -93,55 +136,129 @@ export async function resendRequestCallback(id: string, kind: RequestKind) {
   return backendRequest<{ success: boolean; message: string }>(`portal/${kind}s/${encodeURIComponent(id)}/resend-callback`, { method: "POST" });
 }
 
+export async function reverseRequest(id: string, kind: RequestKind, reason: string) {
+  return backendRequest<BackendTransaction>(`portal/${kind}s/${encodeURIComponent(id)}/reverse`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
 export type BackendPsp = {
   psp_code: string;
   psp_name: string;
   status: string;
   callback_url: string;
+  callback_username?: string;
   bank_accounts: string[];
   allowed_currencies: string[];
   ifsc_code: string | null;
   account_number: string | null;
   contact_email: string | null;
+  contacts?: Record<string, { email?: string; phone?: string; hours?: string }>;
+  has_client_public_key?: boolean;
   api_token_expires_at: string;
+  credentials_rotated_at?: string | null;
+  prev_valid_until?: string | null;
+  created_at?: string;
+  updated_at?: string;
 };
+
+export type PortalUser = {
+  id: number;
+  email: string;
+  full_name: string;
+  role: "admin" | "psp";
+  psp_code: string | null;
+  is_active: boolean;
+  locked_until: string | null;
+  last_login_at: string | null;
+  created_at: string;
+};
+
+export type PspCreated = {
+  psp: BackendPsp;
+  credentials: { api_token: string; api_secret: string; signature_salt: string; api_token_expires_at: string; previous_token_valid_until?: string | null; note?: string };
+  portal_login: PortalUser;
+};
+
+export type PspCredentials = PspCreated["credentials"];
+
+export type PspCreatePayload = {
+  psp_name: string; callback_url: string; callback_username: string; callback_password: string;
+  bank_accounts: string[]; allowed_currencies: string[]; login_email: string; login_password: string;
+  ifsc_code?: string; account_number?: string; contact_email?: string;
+  contacts?: Record<string, { email?: string; phone?: string; hours?: string }>;
+  client_public_key?: string;
+};
+
+export type PspUpdatePayload = Partial<Omit<PspCreatePayload, "login_email" | "login_password">> & { status?: "active" | "inactive" };
 
 export async function fetchPsps(): Promise<BackendPsp[]> {
   const result = await backendRequest<{ psps: BackendPsp[] }>("psps");
   return result.psps;
 }
 
-export async function fetchUsers(pspCode?: string) {
-  const query = pspCode ? `?psp_code=${encodeURIComponent(pspCode)}` : "";
-  return backendRequest<Array<{ id: number; email: string; full_name: string; role: string; psp_code: string | null; is_active: boolean }>>(`users${query}`);
+export async function fetchPsp(pspCode: string) {
+  return backendRequest<BackendPsp>(`psps/${encodeURIComponent(pspCode)}`);
 }
 
-export async function fetchAuditLogs() {
-  return backendRequest<{ items: Array<{ id: number; created_at: string; actor_type: string; actor_id: string; action: string; target: string | null; details: Record<string, unknown> | null }> }>("audit-logs");
+export async function fetchUsers(pspCode?: string): Promise<PortalUser[]> {
+  const query = pspCode ? `?psp_code=${encodeURIComponent(pspCode)}` : "";
+  return backendRequest<PortalUser[]>(`users${query}`);
+}
+
+export async function fetchAuditLogs(filters: { action?: string; target?: string; limit?: number; offset?: number } = {}) {
+  const query = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => { if (value !== undefined && value !== "") query.set(key, String(value)); });
+  return backendRequest<{ items: Array<{ id: number; created_at: string; actor_type: string; actor_id: string; action: string; target: string | null; details: Record<string, unknown> | null; ip_address?: string | null }> }>(`audit-logs?${query}`);
+}
+
+export async function fetchQuestionnaire(pspCode: string) {
+  return backendRequest<{ psp_name: string; answers: Array<{ no: string; question: string; answer: string }> }>(`psps/${encodeURIComponent(pspCode)}/questionnaire`);
+}
+
+export async function fetchSystemHealth() {
+  const [live, ready] = await Promise.all([
+    fetch("/api/backend-health/health", { cache: "no-store" }).then(async (response) => {
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.message ?? `Health check failed (${response.status})`);
+      return body as { status: string; environment: string };
+    }),
+    fetch("/api/backend-health/health/ready", { cache: "no-store" }).then(async (response) => {
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.message ?? `Readiness check failed (${response.status})`);
+      return body as { status: string; environment: string; database: string; callbacks_pending: number; callbacks_failed: number; checked_at: string };
+    }),
+  ]);
+  return { live, ready };
+}
+
+export async function fetchErrorCodes() {
+  return backendRequest<{ error_codes: Array<{ error_code: string; name: string; http_status: number; message: string }> }>("meta/error-codes");
+}
+
+export async function fetchPortalPublicKey() {
+  return backendRequest<string>("meta/public-key");
 }
 
 export async function createPortalUser(payload: { email: string; full_name: string; password: string; role: "admin" | "psp"; psp_code?: string }) {
-  return backendRequest("users", { method: "POST", body: JSON.stringify(payload) });
+  return backendRequest<PortalUser>("users", { method: "POST", body: JSON.stringify(payload) });
 }
 
 export async function updatePortalUser(id: number, payload: { full_name?: string; is_active?: boolean; password?: string; unlock?: boolean }) {
   return backendRequest(`users/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
 }
 
-export async function createPsp(payload: {
-  psp_name: string; callback_url: string; callback_username: string; callback_password: string;
-  bank_accounts: string[]; allowed_currencies: string[]; login_email: string; login_password: string;
-  ifsc_code?: string; account_number?: string; contact_email?: string;
-}) {
-  return backendRequest("psps", { method: "POST", body: JSON.stringify(payload) });
+export async function createPsp(payload: PspCreatePayload) {
+  return backendRequest<PspCreated>("psps", { method: "POST", body: JSON.stringify(payload) });
 }
 
-export async function updatePsp(pspCode: string, payload: Record<string, unknown>) {
-  return backendRequest(`psps/${encodeURIComponent(pspCode)}`, { method: "PUT", body: JSON.stringify(payload) });
+export async function updatePsp(pspCode: string, payload: PspUpdatePayload) {
+  return backendRequest<BackendPsp>(`psps/${encodeURIComponent(pspCode)}`, { method: "PUT", body: JSON.stringify(payload) });
 }
 
 export async function rotatePspCredentials(pspCode: string, options: { grace_hours?: number; rotate_salt?: boolean } = {}) {
-  return backendRequest(`psps/${encodeURIComponent(pspCode)}/rotate-credentials`, { method: "POST", body: JSON.stringify(options) });
+  return backendRequest<PspCredentials>(`psps/${encodeURIComponent(pspCode)}/rotate-credentials`, { method: "POST", body: JSON.stringify(options) });
 }
 
 export async function deletePsp(pspCode: string) {

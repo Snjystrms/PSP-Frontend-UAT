@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
@@ -22,8 +21,8 @@ export function LoginForm() {
 
     try {
       // This browser request intentionally keeps the backend login visible in DevTools.
-      console.info("[Vaspan login] POST /api/auth/login");
-      const response = await fetch("/api/auth/login", {
+      console.info("[Vaspan login] POST /api/backend/auth/login");
+      const response = await fetch("/api/backend/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
@@ -37,29 +36,12 @@ export function LoginForm() {
         return;
       }
 
-      const result = await signIn("credentials", {
-        email: email.trim(),
-        redirect: false,
-        callbackUrl: "/dashboard",
-      });
-
-      if (!result?.ok) {
-        console.error("[Vaspan login] credentials session was not created", { error: result?.error });
-        setError("Your credentials were accepted, but we couldn’t start your session. Please try again.");
-        return;
-      }
-
-      router.replace(result.url || "/dashboard");
+      router.replace("/dashboard");
       router.refresh();
     } catch (cause) {
       console.error("[Vaspan login] request failed", cause instanceof Error ? cause.message : "Unknown error");
       setError("We couldn’t sign you in. Check your email and password, and confirm the payment service is available.");
     } finally {
-      try {
-        await fetch("/api/auth/login", { method: "DELETE", cache: "no-store" });
-      } catch (cause) {
-        console.warn("[Vaspan login] temporary credential cleanup failed", cause instanceof Error ? cause.message : "Unknown error");
-      }
       setIsBusy(false);
     }
   }

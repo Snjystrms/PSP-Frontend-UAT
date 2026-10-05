@@ -1,6 +1,6 @@
 export type Role = "admin" | "psp";
 
-export type RequestStatus = "pending" | "processing" | "approved" | "rejected";
+export type RequestStatus = "pending" | "processing" | "approved" | "rejected" | "reversed";
 
 export type RequestKind = "deposit" | "withdrawal";
 

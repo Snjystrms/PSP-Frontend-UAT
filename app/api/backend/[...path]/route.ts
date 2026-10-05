@@ -1,5 +1,4 @@
-import { getToken } from "next-auth/jwt";
-import type { NextRequest } from "next/server";
+import { cookies } from "next/headers";
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
@@ -10,9 +9,8 @@ async function proxy(request: Request, context: RouteContext) {
       return Response.json({ message: "Cross-origin request rejected." }, { status: 403 });
     }
   }
-  const token = await getToken({ req: request as NextRequest, secret: process.env.AUTH_SECRET });
-  const accessToken = token?.accessToken;
-  if (typeof accessToken !== "string") {
+  const accessToken = (await cookies()).get("vaspan_access_token")?.value;
+  if (!accessToken) {
     return Response.json({ message: "Your session has expired. Please sign in again." }, { status: 401 });
   }
 
@@ -24,16 +22,21 @@ async function proxy(request: Request, context: RouteContext) {
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("content-type", contentType);
 
-  const response = await fetch(target, {
-    method: request.method,
-    headers,
-    body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.arrayBuffer(),
-    cache: "no-store",
-  });
-  const responseHeaders = new Headers();
-  const responseType = response.headers.get("content-type");
-  if (responseType) responseHeaders.set("content-type", responseType);
-  return new Response(response.body, { status: response.status, headers: responseHeaders });
+  try {
+    const response = await fetch(target, {
+      method: request.method,
+      headers,
+      body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.arrayBuffer(),
+      cache: "no-store",
+    });
+    const responseHeaders = new Headers();
+    const responseType = response.headers.get("content-type");
+    if (responseType) responseHeaders.set("content-type", responseType);
+    return new Response(response.body, { status: response.status, headers: responseHeaders });
+  } catch (error) {
+    console.error(`[Vaspan API] ${request.method} ${target} failed:`, error instanceof Error ? error.message : "Unknown network error");
+    return Response.json({ message: "Could not reach the payment service." }, { status: 502 });
+  }
 }
 
 export const GET = proxy;

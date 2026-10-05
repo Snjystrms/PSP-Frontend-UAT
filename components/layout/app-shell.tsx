@@ -3,8 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
-import { Activity, ArrowDownToLine, ArrowUpFromLine, Building2, ChevronDown, LayoutDashboard, LogOut, MessageCircle, PanelLeft } from "lucide-react";
+import { Activity, ArrowDownToLine, ArrowUpFromLine, Building2, ChevronDown, ClipboardList, LayoutDashboard, LogOut, MessageCircle, PanelLeft, Users } from "lucide-react";
 import { AnimatedSidebar, AnimatedSidebarContent, AnimatedSidebarFooter, AnimatedSidebarGroup, AnimatedSidebarGroupContent, AnimatedSidebarGroupLabel, AnimatedSidebarHeader, AnimatedSidebarInset, AnimatedSidebarMenu, AnimatedSidebarMenuButton, AnimatedSidebarMenuItem, AnimatedSidebarProvider, AnimatedSidebarTrigger, useAnimatedSidebar } from "@/components/motion/animated-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -16,6 +15,8 @@ const navigation = [
   { label: "Deposits", href: "/deposits", icon: ArrowDownToLine, roles: ["admin", "psp"] },
   { label: "Withdrawals", href: "/withdrawals", icon: ArrowUpFromLine, roles: ["admin", "psp"] },
   { label: "PSP partners", href: "/clients", icon: Building2, roles: ["admin"] },
+  { label: "Portal users", href: "/users", icon: Users, roles: ["admin"] },
+  { label: "Audit & system", href: "/audit", icon: ClipboardList, roles: ["admin"] },
   { label: "Support chat", href: "/chat", icon: MessageCircle, roles: ["admin", "psp"] },
 ] as const;
 
@@ -46,6 +47,10 @@ function Brand() {
 export function AppShell({ children, role, userName }: { children: React.ReactNode; role: Role; userName: string }) {
   const pathname = usePathname();
   const current = navigation.find((item) => item.href === pathname)?.label ?? "Workspace";
+  async function handleSignOut() {
+    await fetch("/api/auth/logout", { method: "POST", cache: "no-store" });
+    window.location.assign("/login");
+  }
   return (
     <AnimatedSidebarProvider defaultOpen>
       <AnimatedSidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
@@ -61,7 +66,7 @@ export function AppShell({ children, role, userName }: { children: React.ReactNo
       <AnimatedSidebarInset>
         <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur-xl sm:px-7">
           <div className="flex items-center gap-3"><AnimatedSidebarTrigger className="border border-border bg-background shadow-xs hover:bg-accent" aria-label="Toggle sidebar"><PanelLeft className="size-4" /></AnimatedSidebarTrigger><div className="hidden h-5 border-l border-border sm:block" /><div><p className="text-sm font-semibold">{current}</p><p className="hidden text-xs text-muted-foreground sm:block">Payment operations / {current}</p></div></div>
-          <div className="flex items-center gap-2"><span className="hidden rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 sm:inline-flex">Live workspace</span><ThemeToggle /><Button variant="outline" size="icon" aria-label="Sign out" onClick={() => signOut({ callbackUrl: "/login" })}><LogOut className="size-4" /></Button></div>
+          <div className="flex items-center gap-2"><span className="hidden rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 sm:inline-flex">Live workspace</span><ThemeToggle /><Button variant="outline" size="icon" aria-label="Sign out" onClick={() => void handleSignOut()}><LogOut className="size-4" /></Button></div>
         </header>
         <main className="ib-portal-shell min-h-[calc(100svh-72px)] flex-1 p-4 sm:p-7 lg:p-9">{children}</main>
       </AnimatedSidebarInset>
