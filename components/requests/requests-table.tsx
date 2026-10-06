@@ -8,6 +8,7 @@ import {
   Check,
   Clock3,
   Plus,
+  RefreshCw,
   RotateCcw,
   Search,
   X,
@@ -26,6 +27,8 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { SerialNumberCell } from "@/components/ui/serial-number-cell";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { RequestProofPreview } from "@/components/requests/request-proof-preview";
+import { TableSkeletonRows } from "@/components/ui/table-skeleton-rows";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -70,7 +73,8 @@ const statusStyle: Record<RequestStatus, string> = {
 
 export function RequestsTable({ kind }: { kind: RequestKind }) {
   const [filter, setFilter] = useState<"all" | RequestStatus>("all");
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const search = searchInput.trim().length >= 3 ? searchInput.trim() : "";
   const [pspCode, setPspCode] = useState("");
   const [currency, setCurrency] = useState("");
   const [callbackFailed, setCallbackFailed] = useState(false);
@@ -168,27 +172,27 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
     <>
       <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="flex flex-col gap-4 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="font-semibold">
-              {kind === "deposit" ? "Deposit requests" : "Withdrawal requests"}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Live queue from the payment operations backend.
-            </p>
-          </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <div className="relative w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="pl-9"
-                placeholder="Search requests…"
-                value={search}
+                placeholder="Search requests (3+ characters)…"
+                value={searchInput}
                 onChange={(event) => {
-                  setSearch(event.target.value);
-                  setOffset(0);
+                  const value = event.target.value;
+                  const nextSearch = value.trim().length >= 3 ? value.trim() : "";
+                  setSearchInput(value);
+                  if (nextSearch || search) setOffset(0);
                 }}
               />
             </div>
+          </div>
+          <div className="flex flex-wrap gap-2 sm:justify-end">
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              <RefreshCw className="mr-2 size-3.5" />
+              Refresh
+            </Button>
             {user?.role === "admin" && (
               <Button
                 size="sm"
@@ -313,7 +317,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
             className="w-full sm:col-span-2 xl:col-span-1"
             onClick={() => {
               setFilter("all");
-              setSearch("");
+              setSearchInput("");
               setPspCode("");
               setCurrency("");
               setCallbackFailed(false);
@@ -341,7 +345,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
             <table className="w-full min-w-[1020px] text-left text-sm">
               <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="w-14 px-4 py-3 font-medium">Sr. no.</th>
+                  <th className="w-20 whitespace-nowrap px-4 py-3 font-medium">Sr. No.</th>
                   <th className="px-5 py-3 font-medium">Request</th>
                   <th className="px-5 py-3 font-medium">Customer</th>
                   <th className="px-5 py-3 font-medium">Amount</th>
@@ -356,14 +360,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading ? (
-                  <tr>
-                    <td
-                      colSpan={9}
-                      className="px-5 py-12 text-center text-muted-foreground"
-                    >
-                      Loading requests…
-                    </td>
-                  </tr>
+                  <TableSkeletonRows columns={9} cellClassName="px-5 py-4" />
                 ) : (
                   rows.map((row, index) => (
                     <tr
@@ -791,9 +788,17 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
             </DialogDescription>
           </DialogHeader>
           {detailQuery.isLoading ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              Loading request details…
-            </p>
+            <div className="grid gap-3 py-2 sm:grid-cols-2" aria-busy="true">
+              {Array.from({ length: 8 }, (_, index) => (
+                <div
+                  key={index}
+                  className="space-y-2 rounded-lg border border-border p-3"
+                >
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ))}
+            </div>
           ) : detailQuery.isError ? (
             <div className="flex justify-end"><Button variant="outline" onClick={() => void detailQuery.refetch()}>Try again</Button></div>
           ) : (

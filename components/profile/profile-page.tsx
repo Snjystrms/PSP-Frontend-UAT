@@ -47,7 +47,7 @@ export function ProfilePage() {
   }
 
   return <div className="mx-auto w-full max-w-5xl space-y-6">
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><h1 className="text-2xl font-semibold tracking-tight">My profile</h1><p className="mt-1 text-sm text-muted-foreground">Your account details and security settings.</p></div><Button onClick={() => setChangePasswordOpen(true)}><KeyRound className="size-4" />Change password</Button></div>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><h1 className="flex items-center gap-3 text-2xl font-semibold tracking-tight"><span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><UserRound className="size-5" /></span>My profile</h1><p className="mt-1 text-sm text-muted-foreground">Your account details and security settings.</p></div><Button onClick={() => setChangePasswordOpen(true)}><KeyRound className="size-4" />Change password</Button></div>
 
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex flex-col gap-4 border-b border-border bg-gradient-to-r from-primary/[.08] via-transparent to-transparent p-6 sm:flex-row sm:items-center">

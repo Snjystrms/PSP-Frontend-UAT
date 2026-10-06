@@ -67,14 +67,13 @@ export function LoginForm() {
             <Image src="/vaspan_full_bright.svg" alt="Vaspan" width={150} height={47} className="h-auto w-36 dark:hidden" priority />
             <Image src="/vaspan_full_dark.svg" alt="Vaspan" width={150} height={47} className="hidden h-auto w-36 dark:block" priority />
           </div>
-          {/* <div className="mb-7 flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-[#008a9b] ring-1 ring-cyan-800/10"><LockKeyhole size={21} strokeWidth={1.8} /></div> */}
           <h1 className="text-3xl font-semibold tracking-[-.035em] text-foreground">Welcome back</h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">Sign in to your payment operations workspace.</p>
 
           <form className="mt-9 space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-foreground">Work email</label>
-              <Input id="email" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" className="h-12 rounded-xl border-border bg-muted/50 px-4 text-sm text-foreground shadow-none transition placeholder:text-muted-foreground focus-visible:border-[#00DDFF] focus-visible:ring-4 focus-visible:ring-[#00DDFF]/15" />
+              <Input id="email" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="h-12 rounded-xl border-border bg-muted/50 px-4 text-sm text-foreground shadow-none transition placeholder:text-muted-foreground focus-visible:border-[#00DDFF] focus-visible:ring-4 focus-visible:ring-[#00DDFF]/15" />
             </div>
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium text-foreground">Password</label>

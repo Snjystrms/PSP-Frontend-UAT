@@ -9,6 +9,7 @@ import { AnimatedSidebar, AnimatedSidebarContent, AnimatedSidebarFooter, Animate
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ErrorCodeToastRegistry } from "@/components/ui/error-code-toast-registry";
 import type { Role } from "@/lib/types";
 
 const navigation = [
@@ -39,9 +40,41 @@ function Brand() {
   const { state, isMobile } = useAnimatedSidebar();
   const compact = state === "collapsed" && !isMobile;
   return (
-    <Link href="/dashboard" aria-label="Vaspan operations" title={compact ? "Vaspan operations" : undefined} className={`flex min-w-0 items-center ${compact ? "justify-center" : "gap-3"}`}>
-      <Image src="/vaspan-logo.svg" alt="" width={40} height={40} priority className="size-10 shrink-0 object-contain" />
-      {!compact && <span className="min-w-0 text-base font-semibold tracking-tight">Vaspan<span className="text-primary">.</span><span className="mt-0.5 block text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">Payment operations</span></span>}
+    <Link
+      href="/dashboard"
+      aria-label="Vaspan operations"
+      title={compact ? "Vaspan operations" : undefined}
+      className={`flex min-w-0 items-center ${compact ? "justify-center" : "w-full justify-center"}`}
+    >
+      {compact ? (
+        <Image
+          src="/vaspan-logo.svg"
+          alt=""
+          width={40}
+          height={40}
+          priority
+          className="size-10 shrink-0 object-contain"
+        />
+      ) : (
+        <>
+          <Image
+            src="/vaspan_full_dark.svg"
+            alt="Vaspan"
+            width={200}
+            height={68}
+            priority
+            className="hidden h-auto w-full max-w-[200px] dark:block"
+          />
+          <Image
+            src="/vaspan_full_bright.svg"
+            alt="Vaspan"
+            width={200}
+            height={68}
+            priority
+            className="h-auto w-full max-w-[200px] dark:hidden"
+          />
+        </>
+      )}
     </Link>
   );
 }
@@ -82,6 +115,7 @@ export function AppShell({ children, role, userName, userEmail }: { children: Re
   }
   return (
     <AnimatedSidebarProvider defaultOpen>
+      <ErrorCodeToastRegistry />
       <AnimatedSidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
         <AnimatedSidebarHeader className="px-3 py-5">
           <Brand />

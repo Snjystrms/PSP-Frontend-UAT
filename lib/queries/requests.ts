@@ -20,7 +20,7 @@ export function useCreatePortalRequest(kind: RequestKind) {
       void client.invalidateQueries({ queryKey: ["request-page", kind] });
       toast.success(`${kind === "deposit" ? "Deposit" : "Withdrawal"} request created.`);
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not create this request."),
+    onError: (error) => toast.error(error instanceof Error ? error : "Could not create this request."),
   });
 }
 
@@ -32,7 +32,7 @@ export function useUpdateRequest() {
   return useMutation({
     mutationFn: ({ id, kind, status, reason }: { id: string; kind: RequestKind; status: Extract<RequestStatus, "approved" | "rejected">; reason: string }) => updateRequestStatus(id, kind, status, reason),
     onSuccess: (_, variables) => { void client.invalidateQueries({ queryKey: ["requests"] }); void client.invalidateQueries({ queryKey: ["request-page"] }); void client.invalidateQueries({ queryKey: ["request-detail"] }); toast.success(`${variables.id} ${variables.status}`); },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not update this request."),
+    onError: (error) => toast.error(error instanceof Error ? error : "Could not update this request."),
   });
 }
 
@@ -46,7 +46,7 @@ export function useReverseRequest() {
       void client.invalidateQueries({ queryKey: ["request-detail"] });
       toast.success(`${variables.id} reversed.`);
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not reverse this request."),
+    onError: (error) => toast.error(error instanceof Error ? error : "Could not reverse this request."),
   });
 }
 
@@ -55,7 +55,7 @@ export function useResendRequestCallback() {
   return useMutation({
     mutationFn: ({ id, kind }: { id: string; kind: RequestKind }) => resendRequestCallback(id, kind),
     onSuccess: (result) => { void client.invalidateQueries({ queryKey: ["requests"] }); void client.invalidateQueries({ queryKey: ["request-page"] }); void client.invalidateQueries({ queryKey: ["request-detail"] }); toast.success(result.message); },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not queue the callback retry."),
+    onError: (error) => toast.error(error instanceof Error ? error : "Could not queue the callback retry."),
   });
 }
 
@@ -64,6 +64,6 @@ export function useMarkRequestProcessing() {
   return useMutation({
     mutationFn: ({ id, kind }: { id: string; kind: RequestKind }) => markRequestProcessing(id, kind),
     onSuccess: (_, variables) => { void client.invalidateQueries({ queryKey: ["requests"] }); void client.invalidateQueries({ queryKey: ["request-page"] }); void client.invalidateQueries({ queryKey: ["request-detail"] }); toast.success(`${variables.id} is now being reviewed.`); },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not claim this request."),
+    onError: (error) => toast.error(error instanceof Error ? error : "Could not claim this request."),
   });
 }

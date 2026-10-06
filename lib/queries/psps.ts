@@ -10,20 +10,20 @@ export function usePsps(enabled = true) {
 
 export function useCreatePsp() {
   const client = useQueryClient();
-  return useMutation({ mutationFn: (payload: PspCreatePayload) => createPsp(payload), onSuccess: () => { void client.invalidateQueries({ queryKey: ["psps"] }); toast.success("PSP partner created."); }, onError: (error) => toast.error(error instanceof Error ? error.message : "Could not create PSP.") });
+  return useMutation({ mutationFn: (payload: PspCreatePayload) => createPsp(payload), onSuccess: () => { void client.invalidateQueries({ queryKey: ["psps"] }); toast.success("PSP partner created."); }, onError: (error) => toast.error(error instanceof Error ? error : "Could not create PSP.") });
 }
 
 export function useUpdatePsp() {
   const client = useQueryClient();
-  return useMutation({ mutationFn: ({ code, payload }: { code: string; payload: PspUpdatePayload }) => updatePsp(code, payload), onSuccess: () => { void client.invalidateQueries({ queryKey: ["psps"] }); toast.success("PSP settings updated."); }, onError: (error) => toast.error(error instanceof Error ? error.message : "Could not update PSP.") });
+  return useMutation({ mutationFn: ({ code, payload }: { code: string; payload: PspUpdatePayload }) => updatePsp(code, payload), onSuccess: () => { void client.invalidateQueries({ queryKey: ["psps"] }); toast.success("PSP settings updated."); }, onError: (error) => toast.error(error instanceof Error ? error : "Could not update PSP.") });
 }
 
 export function useDeletePsp() {
   const client = useQueryClient();
-  return useMutation({ mutationFn: deletePsp, onSuccess: (result) => { void client.invalidateQueries({ queryKey: ["psps"] }); toast.success(result.message); }, onError: (error) => toast.error(error instanceof Error ? error.message : "Could not delete PSP.") });
+  return useMutation({ mutationFn: deletePsp, onSuccess: (result) => { void client.invalidateQueries({ queryKey: ["psps"] }); toast.success(result.message); }, onError: (error) => toast.error(error instanceof Error ? error : "Could not delete PSP.") });
 }
 
 export function useRotatePspCredentials() {
   const client = useQueryClient();
-  return useMutation({ mutationFn: ({ code, grace_hours, rotate_salt }: { code: string; grace_hours?: number; rotate_salt?: boolean }) => rotatePspCredentials(code, { grace_hours, rotate_salt }), onSuccess: () => { void client.invalidateQueries({ queryKey: ["psps"] }); toast.success("New credentials issued. Copy and store them now."); }, onError: (error) => toast.error(error instanceof Error ? error.message : "Could not rotate credentials.") });
+  return useMutation({ mutationFn: ({ code, grace_hours, rotate_salt }: { code: string; grace_hours?: number; rotate_salt?: boolean }) => rotatePspCredentials(code, { grace_hours, rotate_salt }), onSuccess: () => { void client.invalidateQueries({ queryKey: ["psps"] }); toast.success("New credentials issued. Copy and store them now."); }, onError: (error) => toast.error(error instanceof Error ? error : "Could not rotate credentials.") });
 }

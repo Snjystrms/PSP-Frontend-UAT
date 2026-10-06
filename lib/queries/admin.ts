@@ -10,12 +10,12 @@ export function usePortalUsers(pspCode?: string) {
 
 export function useCreatePortalUser() {
   const client = useQueryClient();
-  return useMutation({ mutationFn: createPortalUser, onSuccess: () => { void client.invalidateQueries({ queryKey: ["portal-users"] }); toast.success("Portal user created."); }, onError: (error) => toast.error(error instanceof Error ? error.message : "Could not create user.") });
+  return useMutation({ mutationFn: createPortalUser, onSuccess: () => { void client.invalidateQueries({ queryKey: ["portal-users"] }); toast.success("Portal user created."); }, onError: (error) => toast.error(error instanceof Error ? error : "Could not create user.") });
 }
 
 export function useUpdatePortalUser() {
   const client = useQueryClient();
-  return useMutation({ mutationFn: ({ id, payload }: { id: number; payload: { full_name?: string; is_active?: boolean; password?: string; unlock?: boolean } }) => updatePortalUser(id, payload), onSuccess: () => { void client.invalidateQueries({ queryKey: ["portal-users"] }); toast.success("Portal user updated."); }, onError: (error) => toast.error(error instanceof Error ? error.message : "Could not update user.") });
+  return useMutation({ mutationFn: ({ id, payload }: { id: number; payload: { full_name?: string; is_active?: boolean; password?: string; unlock?: boolean } }) => updatePortalUser(id, payload), onSuccess: () => { void client.invalidateQueries({ queryKey: ["portal-users"] }); toast.success("Portal user updated."); }, onError: (error) => toast.error(error instanceof Error ? error : "Could not update user.") });
 }
 
 export function useAuditLogs(filters: { action?: string; target?: string; offset?: number; limit?: number } = {}) {

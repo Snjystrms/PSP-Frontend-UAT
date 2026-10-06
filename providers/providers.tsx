@@ -17,7 +17,7 @@ function ThemeBridge() {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(() => new QueryClient({
-    queryCache: new QueryCache({ onError: (error) => toast.error(error instanceof Error ? error.message : "Something went wrong while loading data.") }),
+    queryCache: new QueryCache({ onError: (error) => toast.error(error instanceof Error ? error : "Something went wrong while loading data.") }),
     defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
   }));
   return (
