@@ -813,6 +813,14 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
                   ],
                   ["Status", detailQuery.data.status],
                   ["Reference", detailQuery.data.reference],
+                  [
+                    "Submitted by",
+                    detailQuery.data.createdBy === "admin"
+                      ? "Admin portal"
+                      : detailQuery.data.createdBy === "crm"
+                        ? "CRM"
+                        : "—",
+                  ],
                   ["PSP", detailQuery.data.pspCode ?? "—"],
                   ["Submitted", date(detailQuery.data.createdAt)],
                   ["Reviewed by", detailQuery.data.reviewedBy ?? "—"],

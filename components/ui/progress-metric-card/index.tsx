@@ -96,7 +96,7 @@ export default function ProgressMetricCard({
 }: ProgressMetricCardProps) {
   const gridId = `grid-${useId().replace(/:/g, '')}`;
   const sz = SIZES[size];
-  const shell = `relative flex ${sz.minH} w-full flex-col overflow-hidden rounded-[28px] border border-border bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] ${className}`;
+  const shell = `relative flex ${sz.minH} w-full flex-col overflow-hidden rounded-[28px] border border-border bg-card ${className}`;
 
   const periods = periodOptions ?? DEFAULT_PERIODS;
   const [selectedLabel, setSelectedLabel] = useState(period);

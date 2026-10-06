@@ -341,6 +341,12 @@
   box-shadow: 0 24px 48px -32px color-mix(in srgb, var(--primary) 64%, transparent);
 }
 
+.dashboard-overview .ib-portal-metric,
+.dashboard-overview .ib-portal-metric:hover {
+  box-shadow: none;
+  transform: none;
+}
+
   .ib-portal-surface {
     border-color: color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
     background:

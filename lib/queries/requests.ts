@@ -18,6 +18,7 @@ export function useCreatePortalRequest(kind: RequestKind) {
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ["requests"] });
       void client.invalidateQueries({ queryKey: ["request-page", kind] });
+      void client.invalidateQueries({ queryKey: ["portal-dashboard"] });
       toast.success(`${kind === "deposit" ? "Deposit" : "Withdrawal"} request created.`);
     },
     onError: (error) => toast.error(error instanceof Error ? error : "Could not create this request."),
@@ -31,7 +32,7 @@ export function useUpdateRequest() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ id, kind, status, reason }: { id: string; kind: RequestKind; status: Extract<RequestStatus, "approved" | "rejected">; reason: string }) => updateRequestStatus(id, kind, status, reason),
-    onSuccess: (_, variables) => { void client.invalidateQueries({ queryKey: ["requests"] }); void client.invalidateQueries({ queryKey: ["request-page"] }); void client.invalidateQueries({ queryKey: ["request-detail"] }); toast.success(`${variables.id} ${variables.status}`); },
+    onSuccess: (_, variables) => { void client.invalidateQueries({ queryKey: ["requests"] }); void client.invalidateQueries({ queryKey: ["request-page"] }); void client.invalidateQueries({ queryKey: ["request-detail"] }); void client.invalidateQueries({ queryKey: ["portal-dashboard"] }); toast.success(`${variables.id} ${variables.status}`); },
     onError: (error) => toast.error(error instanceof Error ? error : "Could not update this request."),
   });
 }
@@ -44,6 +45,7 @@ export function useReverseRequest() {
       void client.invalidateQueries({ queryKey: ["requests"] });
       void client.invalidateQueries({ queryKey: ["request-page"] });
       void client.invalidateQueries({ queryKey: ["request-detail"] });
+      void client.invalidateQueries({ queryKey: ["portal-dashboard"] });
       toast.success(`${variables.id} reversed.`);
     },
     onError: (error) => toast.error(error instanceof Error ? error : "Could not reverse this request."),
@@ -54,7 +56,7 @@ export function useResendRequestCallback() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ id, kind }: { id: string; kind: RequestKind }) => resendRequestCallback(id, kind),
-    onSuccess: (result) => { void client.invalidateQueries({ queryKey: ["requests"] }); void client.invalidateQueries({ queryKey: ["request-page"] }); void client.invalidateQueries({ queryKey: ["request-detail"] }); toast.success(result.message); },
+    onSuccess: (result) => { void client.invalidateQueries({ queryKey: ["requests"] }); void client.invalidateQueries({ queryKey: ["request-page"] }); void client.invalidateQueries({ queryKey: ["request-detail"] }); void client.invalidateQueries({ queryKey: ["portal-dashboard"] }); toast.success(result.message); },
     onError: (error) => toast.error(error instanceof Error ? error : "Could not queue the callback retry."),
   });
 }
@@ -63,7 +65,7 @@ export function useMarkRequestProcessing() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ id, kind }: { id: string; kind: RequestKind }) => markRequestProcessing(id, kind),
-    onSuccess: (_, variables) => { void client.invalidateQueries({ queryKey: ["requests"] }); void client.invalidateQueries({ queryKey: ["request-page"] }); void client.invalidateQueries({ queryKey: ["request-detail"] }); toast.success(`${variables.id} is now being reviewed.`); },
+    onSuccess: (_, variables) => { void client.invalidateQueries({ queryKey: ["requests"] }); void client.invalidateQueries({ queryKey: ["request-page"] }); void client.invalidateQueries({ queryKey: ["request-detail"] }); void client.invalidateQueries({ queryKey: ["portal-dashboard"] }); toast.success(`${variables.id} is now being reviewed.`); },
     onError: (error) => toast.error(error instanceof Error ? error : "Could not claim this request."),
   });
 }

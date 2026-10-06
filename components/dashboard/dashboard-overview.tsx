@@ -2,13 +2,15 @@
 
 import {
   BadgeCheck,
+  CircleX,
   Clock3,
   LayoutDashboard,
-  MoreHorizontal,
+  RotateCcw,
   RefreshCw,
   TrendingUp,
   Wallet,
 } from "lucide-react";
+import { useId } from "react";
 import {
   CartesianGrid,
   Area,
@@ -21,10 +23,9 @@ import { useAuthUser } from "@/components/auth/auth-user-context";
 import ProgressMetricCard, {
   type SeriesPoint,
 } from "@/components/ui/progress-metric-card";
-import { useRequests } from "@/lib/queries/requests";
+import { usePortalDashboard } from "@/lib/queries/dashboard";
 import { Button } from "@/components/ui/button";
 import { TableSkeletonRows } from "@/components/ui/table-skeleton-rows";
-import type { PaymentRequest } from "@/lib/types";
 
 const currency = (value: number, code: string) => {
   try {
@@ -37,27 +38,10 @@ const currency = (value: number, code: string) => {
     return `${value.toLocaleString()} ${code}`;
   }
 };
-const makeDailySeries = (
-  rows: PaymentRequest[],
-  kind: PaymentRequest["kind"],
-): SeriesPoint[] => {
-  const days = Array.from({ length: 14 }, (_, index) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (13 - index));
-    return date;
-  });
-  return days.map((day) => {
-    const key = day.toLocaleDateString("en-CA");
-    return {
-      date: day.toLocaleDateString("en", { month: "short", day: "numeric" }),
-      value: rows.filter(
-        (row) =>
-          row.kind === kind &&
-          new Date(row.createdAt).toLocaleDateString("en-CA") === key,
-      ).length,
-    };
-  });
-};
+const formatDayLabel = (value: string) =>
+  new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(
+    new Date(`${value}T00:00:00Z`),
+  );
 const summaryCards = [
   {
     title: "Pending requests",
@@ -73,65 +57,129 @@ const summaryCards = [
     color: "text-emerald-700 bg-emerald-500/10",
     trend: "approved share",
   },
+  {
+    title: "Rejected requests",
+    key: "rejected",
+    icon: CircleX,
+    color: "text-rose-700 bg-rose-500/10",
+    trend: "declined by review",
+  },
+  {
+    title: "Reversed requests",
+    key: "reversed",
+    icon: RotateCcw,
+    color: "text-violet-700 bg-violet-500/10",
+    trend: "sent back",
+  },
 ];
+
+function DashboardKpiCard({
+  title,
+  value,
+  color,
+  icon: Icon,
+  trend,
+  loading,
+}: {
+  title: string;
+  value: string | number;
+  color: string;
+  icon: typeof Clock3;
+  trend: string;
+  loading: boolean;
+}) {
+  const patternId = `dashboard-dots-${useId().replace(/:/g, "")}`;
+
+  return (
+    <article className="ib-portal-metric relative isolate flex min-h-[260px] flex-col justify-between overflow-hidden rounded-[28px] p-5">
+      <div className="pointer-events-none absolute inset-y-0 right-0 -z-10 w-[62%]">
+        <div className="absolute inset-0 bg-gradient-to-l from-primary/10 to-transparent" />
+        <div
+          className="absolute inset-0 text-foreground/[0.13]"
+          style={{
+            WebkitMaskImage: "linear-gradient(to right, transparent, black 55%)",
+            maskImage: "linear-gradient(to right, transparent, black 55%)",
+          }}
+        >
+          <svg className="h-full w-full" aria-hidden>
+            <defs>
+              <pattern id={patternId} width="14" height="14" patternUnits="userSpaceOnUse">
+                <circle cx="1" cy="1" r="1" fill="currentColor" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill={`url(#${patternId})`} />
+          </svg>
+        </div>
+      </div>
+      <span className={`grid size-10 place-items-center rounded-xl ${color}`}>
+        <Icon className="size-5 text-foreground" />
+      </span>
+      <div>
+        <p className="text-sm text-muted-foreground">{title}</p>
+        <p className="mt-1 text-3xl font-semibold tracking-tight">
+          {loading ? "—" : value}
+        </p>
+        <p className="mt-3 flex items-center gap-1.5 text-xs">
+          <span className="inline-flex items-center gap-1 font-medium text-muted-foreground">
+            <TrendingUp className="size-3.5" />
+            {trend}
+          </span>
+          <span className="text-muted-foreground">from live requests</span>
+        </p>
+      </div>
+    </article>
+  );
+}
 
 export function DashboardOverview() {
   const user = useAuthUser();
-  const { data = [], isLoading, isError, refetch } = useRequests();
-  const deposits = data.filter((row) => row.kind === "deposit");
-  const withdrawals = data.filter((row) => row.kind === "withdrawal");
-  const pending = data.filter((row) => row.status === "pending");
-  const decided = data.filter(
-    (row) =>
-      row.status === "approved" ||
-      row.status === "rejected" ||
-      row.status === "reversed",
-  );
+  const { data: dashboard, isLoading, isError, refetch } = usePortalDashboard();
+  const overview = dashboard?.requests_overview;
+  const totalRequests = overview?.total ?? 0;
+  const pending = overview?.pending ?? 0;
+  const processing = overview?.processing ?? 0;
+  const approved = overview?.approved ?? 0;
+  const rejected = overview?.rejected ?? 0;
+  const reversed = overview?.reversed ?? 0;
   const values: Record<string, string | number> = {
-    deposit: deposits.length,
-    withdrawal: withdrawals.length,
-    pending: pending.length,
-    approval: `${decided.length ? Math.round((decided.filter((row) => row.status === "approved").length / decided.length) * 100) : 0}%`,
+    deposit: dashboard?.deposits.total ?? 0,
+    withdrawal: dashboard?.withdrawals.total ?? 0,
+    pending: dashboard?.pending_requests ?? 0,
+    approval: `${dashboard?.approval_rate ?? 0}%`,
+    rejected: overview?.rejected ?? 0,
+    reversed: overview?.reversed ?? 0,
   };
-  const recent = [...data]
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .slice(0, 5);
-  const processing = data.filter((row) => row.status === "processing");
-  const approved = data.filter((row) => row.status === "approved");
-  const rejected = data.filter((row) => row.status === "rejected");
-  const reversed = data.filter((row) => row.status === "reversed");
-  const pendingStop = data.length ? (pending.length / data.length) * 100 : 0;
-  const processingStop = data.length
-    ? ((pending.length + processing.length) / data.length) * 100
+  const recent = dashboard?.recent_transactions ?? [];
+  const pendingStop = totalRequests ? (pending / totalRequests) * 100 : 0;
+  const processingStop = totalRequests
+    ? ((pending + processing) / totalRequests) * 100
     : 0;
-  const approvedStop = data.length
-    ? ((pending.length + processing.length + approved.length) / data.length) *
-      100
+  const approvedStop = totalRequests
+    ? ((pending + processing + approved) / totalRequests) * 100
     : 0;
-  const rejectedStop = data.length
-    ? ((pending.length +
-        processing.length +
-        approved.length +
-        rejected.length) /
-        data.length) *
-      100
+  const rejectedStop = totalRequests
+    ? ((pending + processing + approved + rejected) / totalRequests) * 100
     : 0;
-  const depositSeries = makeDailySeries(data, "deposit");
-  const withdrawalSeries = makeDailySeries(data, "withdrawal");
-  const activitySeries = depositSeries.map((point, index) => ({
-    date: point.date,
-    deposits: point.value,
-    withdrawals: withdrawalSeries[index]?.value ?? 0,
+  const depositSeries: SeriesPoint[] = (dashboard?.deposits.series ?? []).map(
+    (point) => ({ date: formatDayLabel(point.date), value: point.count }),
+  );
+  const withdrawalSeries: SeriesPoint[] = (
+    dashboard?.withdrawals.series ?? []
+  ).map((point) => ({ date: formatDayLabel(point.date), value: point.count }));
+  const activitySeries = (dashboard?.activity ?? []).map((point) => ({
+    date: formatDayLabel(point.date),
+    deposits: point.deposits,
+    withdrawals: point.withdrawals,
   }));
   return (
-    <div className="mx-auto max-w-[1440px] space-y-7">
+    <div className="dashboard-overview mx-auto max-w-[1440px] space-y-7">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="mt-1 flex items-center gap-3 text-3xl font-semibold tracking-tight">
             <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
               <LayoutDashboard className="size-5" />
             </span>
-            Welcome, {user?.name.split(" ")[0] ?? "there"}{" "}
+            Welcome, {(dashboard?.full_name ?? user?.name)?.split(" ")[0] ?? "there"}{" "}
             <span aria-hidden>✦</span>
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -139,16 +187,6 @@ export function DashboardOverview() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
-            <span
-              className={`size-2 rounded-full ${isError ? "bg-rose-500" : isLoading ? "bg-amber-500" : "bg-emerald-500"}`}
-            />
-            {isError
-              ? "Backend unavailable"
-              : isLoading
-                ? "Connecting to backend"
-                : "Backend connected"}
-          </div>
           <Button variant="outline" size="sm" onClick={() => void refetch()}>
             <RefreshCw className="mr-2 size-3.5" />
             Refresh
@@ -156,67 +194,45 @@ export function DashboardOverview() {
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:items-stretch">
+        {summaryCards.map(({ title, key, icon, color, trend }) => (
+          <DashboardKpiCard
+            key={key}
+            title={title}
+            value={values[key]}
+            icon={icon}
+            color={color}
+            trend={trend}
+            loading={isLoading}
+          />
+        ))}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:items-stretch">
         <ProgressMetricCard
           title="Deposit requests"
           total={String(values.deposit)}
-          deltaLabel="daily activity"
-          percent={`${deposits.length} total`}
+          delta={String(dashboard?.deposits.today ?? 0)}
+          deltaLabel="today"
+          percent={`${(dashboard?.deposits.avg ?? 0).toFixed(1)} avg/day`}
           unit="requests"
           data={depositSeries}
           dateFormatter={(date) => date}
           size="sm"
-          className="ib-portal-metric xl:col-span-2"
+          className="ib-portal-metric"
           loading={isLoading}
         />
         <ProgressMetricCard
           title="Withdrawal requests"
           total={String(values.withdrawal)}
-          deltaLabel="daily activity"
-          percent={`${withdrawals.length} total`}
+          delta={String(dashboard?.withdrawals.today ?? 0)}
+          deltaLabel="today"
+          percent={`${(dashboard?.withdrawals.avg ?? 0).toFixed(1)} avg/day`}
           unit="requests"
           data={withdrawalSeries}
           dateFormatter={(date) => date}
           size="sm"
-          className="ib-portal-metric xl:col-span-2"
+          className="ib-portal-metric"
           loading={isLoading}
         />
-        {summaryCards.map(({ title, key, icon: Icon, color, trend }) => (
-          <article
-            key={key}
-            className="ib-portal-metric flex min-h-[260px] flex-col justify-between rounded-[28px] bg-card p-5"
-          >
-            <div className="flex items-start justify-between">
-              <span
-                className={`grid size-10 place-items-center rounded-xl ${color}`}
-              >
-                <Icon className="size-5" />
-              </span>
-              <button
-                className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted"
-                aria-label={`${title} menu`}
-              >
-                <MoreHorizontal className="size-4" />
-              </button>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{title}</p>
-              <p className="mt-1 text-3xl font-semibold tracking-tight">
-                {isLoading ? "—" : values[key]}
-              </p>
-              <p className="mt-3 flex items-center gap-1.5 text-xs">
-                <span
-                  className={`inline-flex items-center gap-1 font-medium ${key === "pending" ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-300"}`}
-                >
-                  <TrendingUp className="size-3.5" />
-                  {trend}
-                </span>
-                <span className="text-muted-foreground">
-                  from live requests
-                </span>
-              </p>
-            </div>
-          </article>
-        ))}
       </div>
       <div className="grid gap-5 xl:grid-cols-[1.65fr_0.85fr]">
         <section className="ib-portal-metric rounded-2xl bg-card p-5 sm:p-6">
@@ -313,7 +329,7 @@ export function DashboardOverview() {
             </ResponsiveContainer>
           </div>
         </section>
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
+        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-semibold">Requests overview</h2>
@@ -334,7 +350,7 @@ export function DashboardOverview() {
             >
               <div className="grid size-24 place-items-center rounded-full bg-card text-center">
                 <span>
-                  <strong className="block text-2xl">{data.length}</strong>
+                  <strong className="block text-2xl">{totalRequests}</strong>
                   <span className="text-[10px] text-muted-foreground">
                     Loaded requests
                   </span>
@@ -344,31 +360,30 @@ export function DashboardOverview() {
             <div className="space-y-3 text-sm">
               <p className="flex items-center gap-2">
                 <span className="size-2 rounded-full bg-amber-500" />
-                Pending <strong className="ml-auto">{pending.length}</strong>
+                Pending <strong className="ml-auto">{pending}</strong>
               </p>
               <p className="flex items-center gap-2">
                 <span className="size-2 rounded-full bg-sky-500" />
-                Processing{" "}
-                <strong className="ml-auto">{processing.length}</strong>
+                Processing <strong className="ml-auto">{processing}</strong>
               </p>
               <p className="flex items-center gap-2">
                 <span className="size-2 rounded-full bg-emerald-500" />
-                Approved <strong className="ml-auto">{approved.length}</strong>
+                Approved <strong className="ml-auto">{approved}</strong>
               </p>
               <p className="flex items-center gap-2">
                 <span className="size-2 rounded-full bg-rose-500" />
-                Rejected <strong className="ml-auto">{rejected.length}</strong>
+                Rejected <strong className="ml-auto">{rejected}</strong>
               </p>
               <p className="flex items-center gap-2">
                 <span className="size-2 rounded-full bg-violet-500" />
-                Reversed <strong className="ml-auto">{reversed.length}</strong>
+                Reversed <strong className="ml-auto">{reversed}</strong>
               </p>
             </div>
           </div>
           <div className="mt-7 rounded-xl bg-muted/50 p-4">
             <p className="text-xs font-medium">Currently processing</p>
             <p className="mt-1 text-xl font-semibold">
-              {processing.length}{" "}
+              {processing}{" "}
               <span className="text-sm font-normal text-muted-foreground">
                 requests
               </span>
@@ -379,7 +394,7 @@ export function DashboardOverview() {
           </div>
         </section>
       </div>
-      <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border p-5">
           <div>
             <h2 className="font-semibold">Recent transactions</h2>
@@ -415,17 +430,17 @@ export function DashboardOverview() {
                       {row.kind}
                     </span>
                   </td>
-                  <td className="px-5 py-4">{row.clientName}</td>
+                  <td className="px-5 py-4">{row.customer_name}</td>
                   <td className="px-5 py-4 text-muted-foreground">
                     {new Intl.DateTimeFormat("en", {
                       month: "short",
                       day: "numeric",
                       hour: "numeric",
                       minute: "2-digit",
-                    }).format(new Date(row.createdAt))}
+                    }).format(new Date(row.created_at))}
                   </td>
                   <td className="px-5 py-4 font-semibold">
-                    {currency(row.amount, row.currency)}
+                    {currency(Number(row.amount), row.currency)}
                   </td>
                   <td className="px-5 py-4">
                     <span

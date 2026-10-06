@@ -8,6 +8,7 @@ type BackendTransaction = {
   amount: number | string;
   currency: string;
   status: RequestStatus;
+  created_by?: "admin" | "crm";
   created_at: string;
   comment?: string | null;
   review_comment?: string | null;
@@ -30,6 +31,77 @@ type BackendTransaction = {
 };
 
 type BackendPage = { items: BackendTransaction[]; total: number };
+
+export type PortalDashboard = {
+  role: "admin" | "psp";
+  full_name: string;
+  psp_code: string | null;
+  psp_name: string | null;
+  deposits: DashboardRequestCard;
+  withdrawals: DashboardRequestCard;
+  pending_requests: number;
+  approval_rate: number;
+  activity: Array<{
+    date: string;
+    deposits: number;
+    withdrawals: number;
+  }>;
+  requests_overview: {
+    pending: number;
+    processing: number;
+    approved: number;
+    rejected: number;
+    reversed: number;
+    total: number;
+  };
+  recent_transactions: Array<{
+    id: string;
+    kind: RequestKind;
+    psp_code: string | null;
+    customer_name: string;
+    customer_email: string;
+    amount: number | string;
+    currency: string;
+    status: RequestStatus;
+    created_at: string;
+  }>;
+  generated_at: string;
+};
+
+export type PortalChatMessage = {
+  id: number;
+  sender_name: string;
+  sender_role: "admin" | "psp";
+  message: string;
+  created_at: string;
+};
+
+export type PortalChatSummary = {
+  transaction_id: string;
+  kind: RequestKind;
+  psp_code: string | null;
+  status: "open" | "closed" | null;
+  opened_by: string | null;
+  closed_by: string | null;
+  closed_at: string | null;
+  created_at: string | null;
+  last_message_at: string | null;
+  unread_count: number;
+};
+
+export type PortalChat = PortalChatSummary & {
+  messages: PortalChatMessage[];
+};
+
+type DashboardRequestCard = {
+  period_days: number;
+  total: number;
+  today: number;
+  peak: number;
+  low: number;
+  avg: number;
+  series: Array<{ date: string; count: number }>;
+};
 
 class BackendRequestError extends Error {
   constructor(
@@ -74,6 +146,64 @@ async function backendRequest<T>(path: string, init?: RequestInit): Promise<T> {
     );
   }
   return body as T;
+}
+
+export async function fetchPortalDashboard(
+  options: { days?: number; activityDays?: number; recentLimit?: number } = {},
+) {
+  const query = new URLSearchParams({
+    days: String(options.days ?? 30),
+    activity_days: String(options.activityDays ?? 14),
+    recent_limit: String(options.recentLimit ?? 10),
+  });
+  return backendRequest<PortalDashboard>(`portal/dashboard?${query}`);
+}
+
+export async function fetchPortalChats(filters: {
+  status?: "open" | "closed";
+  kind?: RequestKind;
+  unread?: boolean;
+  limit?: number;
+  offset?: number;
+} = {}) {
+  const query = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined) query.set(key, String(value));
+  });
+  return backendRequest<{
+    items: PortalChatSummary[];
+    total: number;
+    limit: number;
+    offset: number;
+  }>(`portal/chats?${query}`);
+}
+
+export async function fetchPortalChat(kind: RequestKind, id: string) {
+  return backendRequest<PortalChat>(
+    `portal/${kind}s/${encodeURIComponent(id)}/chat`,
+  );
+}
+
+export async function sendPortalChatMessage(
+  kind: RequestKind,
+  id: string,
+  message: string,
+) {
+  return backendRequest<PortalChatMessage>(
+    `portal/${kind}s/${encodeURIComponent(id)}/chat/messages`,
+    { method: "POST", body: JSON.stringify({ message }) },
+  );
+}
+
+export async function updatePortalChatStatus(
+  kind: RequestKind,
+  id: string,
+  action: "close" | "reopen",
+) {
+  return backendRequest<PortalChatSummary>(
+    `portal/${kind}s/${encodeURIComponent(id)}/chat/${action}`,
+    { method: "POST" },
+  );
 }
 
 function mapTransaction(
@@ -189,6 +319,7 @@ export async function fetchRequestDetail(id: string, kind: RequestKind) {
     callbackLastError: row.callback_last_error,
     callbackSentAt: row.callback_sent_at,
     callbackAttempts: row.callback_attempts ?? 0,
+    createdBy: row.created_by,
   };
 }
 
