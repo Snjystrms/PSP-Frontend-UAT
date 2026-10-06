@@ -12,6 +12,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SerialNumberCell } from "@/components/ui/serial-number-cell";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { TableSkeletonRows } from "@/components/ui/table-skeleton-rows";
@@ -49,6 +57,7 @@ export function UsersTable({ currentUserId }: { currentUserId: number }) {
   const update = useUpdatePortalUser();
   const [creating, setCreating] = useState(false);
   const [newRole, setNewRole] = useState<"admin" | "psp">("psp");
+  const [newPspCode, setNewPspCode] = useState("");
   const [editing, setEditing] = useState<PortalUser | null>(null);
   const [passwordUser, setPasswordUser] = useState<PortalUser | null>(null);
 
@@ -62,7 +71,7 @@ export function UsersTable({ currentUserId }: { currentUserId: number }) {
         full_name: String(form.get("full_name")).trim(),
         password: String(form.get("password")),
         role,
-        ...(role === "psp" ? { psp_code: String(form.get("psp_code")) } : {}),
+        ...(role === "psp" ? { psp_code: newPspCode } : {}),
       },
       { onSuccess: () => setCreating(false) },
     );
@@ -105,22 +114,25 @@ export function UsersTable({ currentUserId }: { currentUserId: number }) {
       <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="flex flex-col gap-4 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-2">
-            <select
-              aria-label="Filter users by PSP"
-              value={filterPspCode}
-              onChange={(event) => {
-                setFilterPspCode(event.target.value);
+            <Select
+              value={filterPspCode || "all"}
+              onValueChange={(value) => {
+                setFilterPspCode(value === "all" ? "" : value);
                 setPageIndex(0);
               }}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
             >
-              <option value="">All users</option>
+              <SelectTrigger aria-label="Filter users by PSP" className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+              <SelectItem value="all">All users</SelectItem>
               {psps.data?.map((psp) => (
-                <option key={psp.psp_code} value={psp.psp_code}>
+                <SelectItem key={psp.psp_code} value={psp.psp_code}>
                   {psp.psp_name}
-                </option>
+                </SelectItem>
               ))}
-            </select>
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex flex-wrap gap-2 sm:justify-end">
             <Button
@@ -313,7 +325,10 @@ export function UsersTable({ currentUserId }: { currentUserId: number }) {
         open={creating}
         onOpenChange={(open) => {
           setCreating(open);
-          if (open) setNewRole("psp");
+          if (open) {
+            setNewRole("psp");
+            setNewPspCode("");
+          }
         }}
       >
         <DialogContent>
@@ -326,51 +341,55 @@ export function UsersTable({ currentUserId }: { currentUserId: number }) {
           <form id="create-user" className="grid gap-4" onSubmit={createUser}>
             <label className="grid gap-1.5 text-sm font-medium">
               Full name
-              <Input name="full_name" required maxLength={200} />
+              <Input name="full_name" placeholder="e.g. Asha Sharma" required maxLength={200} />
             </label>
             <label className="grid gap-1.5 text-sm font-medium">
               Email
-              <Input name="email" type="email" required />
+              <Input name="email" type="email" placeholder="name@company.com" required />
             </label>
             <label className="grid gap-1.5 text-sm font-medium">
               Password
-              <Input
+              <PasswordInput
                 name="password"
-                type="password"
                 required
                 minLength={10}
                 maxLength={72}
+                placeholder="At least 10 characters"
               />
             </label>
             <label className="grid gap-1.5 text-sm font-medium">
               Role
-              <select
-                name="role"
+              <Select
                 value={newRole}
-                onChange={(event) =>
-                  setNewRole(event.target.value as "admin" | "psp")
+                onValueChange={(value) =>
+                  setNewRole(value as "admin" | "psp")
                 }
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
               >
-                <option value="psp">PSP user</option>
-                <option value="admin">Administrator</option>
-              </select>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="psp">PSP user</SelectItem>
+                  <SelectItem value="admin">Administrator</SelectItem>
+                </SelectContent>
+              </Select>
             </label>
             {newRole === "psp" && (
               <label className="grid gap-1.5 text-sm font-medium">
                 PSP code
-                <select
+                <Select
                   name="psp_code"
                   required
-                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  value={newPspCode}
+                  onValueChange={setNewPspCode}
                 >
-                  <option value="">Select partner</option>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Select partner" /></SelectTrigger>
+                  <SelectContent>
                   {psps.data?.map((psp) => (
-                    <option key={psp.psp_code} value={psp.psp_code}>
+                    <SelectItem key={psp.psp_code} value={psp.psp_code}>
                       {psp.psp_name} ({psp.psp_code})
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
+                  </SelectContent>
+                </Select>
               </label>
             )}
           </form>
@@ -417,6 +436,7 @@ export function UsersTable({ currentUserId }: { currentUserId: number }) {
                 minLength={1}
                 maxLength={200}
                 defaultValue={editing?.full_name}
+                placeholder="Enter the user's full name"
               />
             </label>
             <label className="grid gap-1.5 text-sm font-medium">
@@ -424,12 +444,12 @@ export function UsersTable({ currentUserId }: { currentUserId: number }) {
               <span className="font-normal text-muted-foreground">
                 (leave blank to keep current password)
               </span>
-              <Input
+              <PasswordInput
                 name="password"
-                type="password"
                 minLength={10}
                 maxLength={72}
                 autoComplete="new-password"
+                placeholder="Leave blank to keep the current password"
               />
             </label>
             <label className="flex cursor-pointer items-center gap-2 text-sm">
@@ -485,12 +505,12 @@ export function UsersTable({ currentUserId }: { currentUserId: number }) {
           <form id="reset-password" onSubmit={resetPassword}>
             <label className="grid gap-1.5 text-sm font-medium">
               New password
-              <Input
+              <PasswordInput
                 name="password"
-                type="password"
                 required
                 minLength={10}
                 maxLength={72}
+                placeholder="At least 10 characters"
               />
             </label>
           </form>

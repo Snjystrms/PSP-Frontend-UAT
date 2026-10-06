@@ -13,6 +13,14 @@ import {
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -375,6 +383,7 @@ export function PspDirectoryTable() {
                 minLength={1}
                 maxLength={200}
                 defaultValue={editing?.psp_name}
+                placeholder="e.g. Acme Payments"
               />
             </label>
             <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">
@@ -387,6 +396,7 @@ export function PspDirectoryTable() {
                 pattern="[A-Za-z0-9]+"
                 title="Use 6–34 letters or numbers without spaces."
                 defaultValue={editing?.account_number ?? ""}
+                placeholder="Settlement account number"
               />
             </label>
             <label className="grid gap-1.5 text-sm font-medium">
@@ -404,22 +414,23 @@ export function PspDirectoryTable() {
                 name="contact_email"
                 type="email"
                 defaultValue={editing?.contact_email ?? ""}
+                placeholder="ops@company.com"
               />
             </label>
             {!editing && (
               <>
                 <label className="grid gap-1.5 text-sm font-medium">
                   Portal login email
-                  <Input name="login_email" type="email" required />
+                  <Input name="login_email" type="email" placeholder="admin@partner.com" required />
                 </label>
                 <label className="grid gap-1.5 text-sm font-medium">
                   Portal login password
-                  <Input
+                  <PasswordInput
                     name="login_password"
-                    type="password"
                     required
                     minLength={10}
                     maxLength={72}
+                    placeholder="At least 10 characters"
                   />
                 </label>
               </>
@@ -427,14 +438,16 @@ export function PspDirectoryTable() {
             {editing && (
               <label className="grid gap-1.5 text-sm font-medium">
                 Status
-                <select
+                <Select
                   name="status"
                   defaultValue={editing.status}
-                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
                 >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
               </label>
             )}
           </form>

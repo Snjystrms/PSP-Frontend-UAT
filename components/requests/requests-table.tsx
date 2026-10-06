@@ -587,14 +587,14 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
             </label>
             <label className="grid gap-1.5 text-sm font-medium">
               Customer name
-              <Input name="customer_name" required maxLength={200} />
+              <Input name="customer_name" placeholder="e.g. Rahul Sharma" required maxLength={200} />
             </label>
             <label className="grid gap-1.5 text-sm font-medium">
               Customer email
-              <Input name="customer_email" type="email" required />
+              <Input name="customer_email" type="email" placeholder="customer@example.com" required />
             </label>
             <label className="grid gap-1.5 text-sm font-medium">
-              Amount
+              Amount (₹)
               <Input
                 name="amount"
                 type="number"
@@ -602,6 +602,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
                 min="0.01"
                 step="0.01"
                 required
+                placeholder="0.00"
               />
             </label>
             {kind === "withdrawal" && (
@@ -643,14 +644,14 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
                 </div>
                 <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">
                   UTR number (optional)
-                  <Input name="utr_number" maxLength={100} />
+                  <Input name="utr_number" placeholder="Enter the payment UTR" maxLength={100} />
                 </label>
               </>
             ) : (
               <>
                 <label className="grid gap-1.5 text-sm font-medium">
                   Destination bank
-                  <Input name="dest_bank_name" maxLength={200} />
+                  <Input name="dest_bank_name" placeholder="e.g. HDFC Bank" maxLength={200} />
                 </label>
                 <label className="grid gap-1.5 text-sm font-medium">
                   Account number
@@ -658,15 +659,16 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
                     name="dest_account_number"
                     minLength={4}
                     maxLength={50}
+                    placeholder="Enter account number"
                   />
                 </label>
                 <label className="grid gap-1.5 text-sm font-medium">
                   IFSC / SWIFT
-                  <Input name="dest_ifsc" />
+                  <Input name="dest_ifsc" placeholder="IFSC or SWIFT code" />
                 </label>
                 <label className="grid gap-1.5 text-sm font-medium">
                   Account holder
-                  <Input name="dest_account_name" maxLength={200} />
+                  <Input name="dest_account_name" placeholder="Name on the bank account" maxLength={200} />
                 </label>
               </>
             )}
@@ -676,6 +678,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
                 name="comment"
                 maxLength={2000}
                 rows={3}
+                placeholder="Add any details about this request (optional)"
                 className="w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </label>

@@ -13,6 +13,13 @@ import {
 import { useAuthUser } from "@/components/auth/auth-user-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   usePortalChat,
@@ -136,30 +143,36 @@ export function SupportChat() {
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <select
-              aria-label="Filter conversations by status"
+            <Select
               value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(event.target.value as typeof statusFilter)
+              onValueChange={(value) =>
+                setStatusFilter(value as typeof statusFilter)
               }
-              className="h-9 min-w-0 rounded-md border border-input bg-background px-2 text-sm"
             >
-              <option value="open">Open chats</option>
-              <option value="closed">Closed chats</option>
-              <option value="all">All chats</option>
-            </select>
-            <select
-              aria-label="Filter conversations by request type"
+              <SelectTrigger aria-label="Filter conversations by status" className="min-w-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="open">Open chats</SelectItem>
+                <SelectItem value="closed">Closed chats</SelectItem>
+                <SelectItem value="all">All chats</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
               value={kindFilter}
-              onChange={(event) =>
-                setKindFilter(event.target.value as typeof kindFilter)
+              onValueChange={(value) =>
+                setKindFilter(value as typeof kindFilter)
               }
-              className="h-9 min-w-0 rounded-md border border-input bg-background px-2 text-sm"
             >
-              <option value="all">All requests</option>
-              <option value="deposit">Deposits</option>
-              <option value="withdrawal">Withdrawals</option>
-            </select>
+              <SelectTrigger aria-label="Filter conversations by request type" className="min-w-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All requests</SelectItem>
+                <SelectItem value="deposit">Deposits</SelectItem>
+                <SelectItem value="withdrawal">Withdrawals</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -234,15 +247,18 @@ export function SupportChat() {
         <form onSubmit={startConversation} className="space-y-2 border-t border-border p-4">
           <p className="text-xs font-semibold">Open a request conversation</p>
           <div className="flex gap-2">
-            <select
-              aria-label="Request type"
+            <Select
               value={requestKind}
-              onChange={(event) => setRequestKind(event.target.value as RequestKind)}
-              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              onValueChange={(value) => setRequestKind(value as RequestKind)}
             >
-              <option value="deposit">Deposit</option>
-              <option value="withdrawal">Withdrawal</option>
-            </select>
+              <SelectTrigger aria-label="Request type" className="w-[130px] shrink-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="deposit">Deposit</SelectItem>
+                <SelectItem value="withdrawal">Withdrawal</SelectItem>
+              </SelectContent>
+            </Select>
             <Input
               required
               value={requestId}

@@ -7,7 +7,7 @@ import { useAuthUser } from "@/components/auth/auth-user-context";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useChangeCurrentPassword } from "@/lib/queries/profile";
 
 export function ProfilePage() {
@@ -64,9 +64,9 @@ export function ProfilePage() {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader><DialogTitle>Change password</DialogTitle><DialogDescription>Enter your current password and choose a new one between 10 and 72 characters.</DialogDescription></DialogHeader>
         <form id="change-password" className="grid gap-4" onSubmit={submitPasswordChange}>
-          <label className="grid gap-1.5 text-sm font-medium">Current password<Input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></label>
-          <label className="grid gap-1.5 text-sm font-medium">New password<Input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={10} maxLength={72} required /></label>
-          <label className="grid gap-1.5 text-sm font-medium">Confirm new password<Input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={10} maxLength={72} required /></label>
+          <label className="grid gap-1.5 text-sm font-medium">Current password<PasswordInput autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Enter your current password" required /></label>
+          <label className="grid gap-1.5 text-sm font-medium">New password<PasswordInput autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={10} maxLength={72} placeholder="At least 10 characters" required /></label>
+          <label className="grid gap-1.5 text-sm font-medium">Confirm new password<PasswordInput autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={10} maxLength={72} placeholder="Re-enter your new password" required /></label>
         </form>
         <DialogFooter><Button type="button" variant="outline" onClick={() => setChangePasswordOpen(false)} disabled={changePassword.isPending}>Cancel</Button><Button type="submit" form="change-password" disabled={changePassword.isPending}>{changePassword.isPending ? "Updating…" : "Update password"}</Button></DialogFooter>
       </DialogContent>
