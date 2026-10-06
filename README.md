@@ -2,7 +2,7 @@
 
 Next.js portal for the PSP payment operations backend. It provides authenticated deposit and withdrawal review queues, a transaction dashboard, and an admin PSP directory.
 
-## Local setup
+## Local setupp
 
 1. Start the FastAPI backend from the `traze_psp_backend` project and make sure it is reachable from the Next.js server.
 2. Copy `.env.example` to `.env.local` and set `PSP_API_BASE_URL` to the backend API prefix (for local development: `http://localhost:8000/api/v1/`).
