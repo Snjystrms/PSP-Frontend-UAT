@@ -156,19 +156,19 @@
    :root / .dark var blocks above (unlayered styles always win over @layer styles).
    nav-main / sidebar active items read --sidebar-active-text via dark:text-sidebar-active-text. */
 :root[data-theme-id="vaspan-bright"] {
-  --primary: #007d91;
+  --primary: #00ddff;
   --primary-foreground: #04232b;
-  --accent: #e5f9fc;
+  --accent: #dffaff;
   --accent-foreground: #07323a;
   --ring: #00a9c2;
-  --sidebar-primary: #007d91;
+  --sidebar-primary: #00ddff;
   --sidebar-primary-foreground: #04232b;
-  --sidebar-accent: #e5f9fc;
+  --sidebar-accent: #dffaff;
   --sidebar-accent-foreground: #07323a;
   --sidebar-active-text: #006d7e;
-  --color-primary: #007d91;
+  --color-primary: #00ddff;
   --color-accent: #00a9c2;
-  --chart-1: #007d91;
+  --chart-1: #00ddff;
   --chart-2: #00a9c2;
   --chart-3: #398895;
   --chart-4: #72ccd9;

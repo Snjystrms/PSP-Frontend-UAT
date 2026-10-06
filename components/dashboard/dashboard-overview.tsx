@@ -14,6 +14,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useId } from "react";
+import Link from "next/link";
 import {
   CartesianGrid,
   Area,
@@ -50,70 +51,70 @@ const summaryCards = [
     title: "Pending requests",
     key: "pending",
     icon: Clock3,
-    color: "text-amber-700 bg-amber-500/10",
+    href: "/deposits",
     trend: "Needs review",
   },
   {
     title: "Pending deposits",
     key: "pending_deposits",
     icon: ArrowDownToLine,
-    color: "text-amber-700 bg-amber-500/10",
+    href: "/deposits",
     trend: "Needs review",
   },
   {
     title: "Pending withdrawals",
     key: "pending_withdrawals",
     icon: ArrowUpFromLine,
-    color: "text-amber-700 bg-amber-500/10",
+    href: "/withdrawals",
     trend: "Needs review",
   },
   {
     title: "Approved deposits",
     key: "approved_deposits",
     icon: BadgeCheck,
-    color: "text-emerald-700 bg-emerald-500/10",
+    href: "/deposits",
     trend: "Cleared by review",
   },
   {
     title: "Approved withdrawals",
     key: "approved_withdrawals",
     icon: BadgeCheck,
-    color: "text-emerald-700 bg-emerald-500/10",
+    href: "/withdrawals",
     trend: "Cleared by review",
   },
   {
     title: "Rejected deposits",
     key: "rejected_deposits",
     icon: CircleX,
-    color: "text-rose-700 bg-rose-500/10",
+    href: "/deposits",
     trend: "Declined by review",
   },
   {
     title: "Rejected withdrawals",
     key: "rejected_withdrawals",
     icon: CircleX,
-    color: "text-rose-700 bg-rose-500/10",
+    href: "/withdrawals",
     trend: "Declined by review",
   },
   {
     title: "Reversed deposits",
     key: "reversed_deposits",
     icon: RotateCcw,
-    color: "text-violet-700 bg-violet-500/10",
+    href: "/deposits",
     trend: "Returned for review",
   },
   {
     title: "Reversed withdrawals",
     key: "reversed_withdrawals",
     icon: RotateCcw,
-    color: "text-violet-700 bg-violet-500/10",
+    href: "/withdrawals",
     trend: "Returned for review",
   },
   {
     title: "PSP partners",
     key: "total_psp_count",
     icon: Building2,
-    color: "text-sky-700 bg-sky-500/10",
+    href: "/clients",
     trend: "Available in this portal",
   },
 ];
@@ -121,22 +122,22 @@ const summaryCards = [
 function DashboardKpiCard({
   title,
   value,
-  color,
   icon: Icon,
   trend,
   loading,
+  href,
 }: {
   title: string;
   value: string | number;
-  color: string;
   icon: typeof Clock3;
   trend: string;
   loading: boolean;
+  href: string;
 }) {
   const patternId = `dashboard-dots-${useId().replace(/:/g, "")}`;
 
   return (
-    <article className="ib-portal-metric relative isolate flex min-h-[170px] flex-col justify-between overflow-hidden rounded-[28px] p-4">
+    <Link href={href} aria-label={`View ${title.toLowerCase()}`} className="ib-portal-metric relative isolate flex min-h-[170px] flex-col justify-between overflow-hidden rounded-[28px] p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
       <div className="pointer-events-none absolute inset-y-0 right-0 -z-10 w-[62%]">
         <div className="absolute inset-0 bg-gradient-to-l from-primary/10 to-transparent" />
         <div
@@ -156,14 +157,16 @@ function DashboardKpiCard({
           </svg>
         </div>
       </div>
-      <span className={`grid size-10 place-items-center rounded-xl ${color}`}>
-        <Icon className="size-5 text-foreground" />
-      </span>
+      <div className="relative z-10 flex items-center gap-6">
+        <Icon className="size-7 shrink-0 text-foreground" aria-hidden="true" />
+        <div className="min-w-0">
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <p className="mt-1 text-3xl font-semibold tracking-tight">
+            {loading ? "—" : value}
+          </p>
+        </div>
+      </div>
       <div>
-        <p className="text-sm text-muted-foreground">{title}</p>
-        <p className="mt-1 text-3xl font-semibold tracking-tight">
-          {loading ? "—" : value}
-        </p>
         <p className="mt-3 flex items-center gap-1.5 text-xs">
           <span className="inline-flex items-center gap-1 font-medium text-muted-foreground">
             <TrendingUp className="size-3.5" />
@@ -172,7 +175,7 @@ function DashboardKpiCard({
           <span className="text-muted-foreground">from live data</span>
         </p>
       </div>
-    </article>
+    </Link>
   );
 }
 
@@ -245,15 +248,15 @@ export function DashboardOverview() {
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5 xl:items-stretch">
-        {summaryCards.map(({ title, key, icon, color, trend }) => (
+        {summaryCards.map(({ title, key, icon, href, trend }) => (
           <DashboardKpiCard
             key={key}
             title={title}
             value={values[key]}
             icon={icon}
-            color={color}
             trend={trend}
             loading={isLoading}
+            href={key === "total_psp_count" && user?.role !== "admin" ? "/dashboard" : href}
           />
         ))}
       </div>

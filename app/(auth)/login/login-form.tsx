@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, LogIn } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
 import { LogoCube } from "@/components/ui/logo-cube";
@@ -105,8 +105,8 @@ export function LoginForm() {
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={isBusy} className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#00DDFF] px-5 text-sm font-semibold text-[#092126] shadow-[0_8px_24px_-8px_rgba(0,221,255,.5)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#25E2FF] hover:shadow-[0_12px_30px_-8px_rgba(0,221,255,.65)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#00DDFF]/30 disabled:cursor-wait disabled:opacity-70">
-              {isBusy ? "Signing in…" : <>Sign in <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" /></>}
+            <button type="submit" disabled={isBusy} className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#00DDFF] px-5 text-sm font-semibold text-[#092126] shadow-none transition duration-200 hover:-translate-y-0.5 hover:bg-[#25E2FF] hover:shadow-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#00DDFF]/30 disabled:cursor-wait disabled:opacity-70">
+              {isBusy ? "Signing in…" : <>Sign in <LogIn size={17} /></>}
             </button>
           </form>
           <p className="mt-7 text-center text-xs leading-5 text-muted-foreground">Access is provided by your organization administrator.</p>
