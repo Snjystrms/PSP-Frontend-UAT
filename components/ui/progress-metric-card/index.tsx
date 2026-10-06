@@ -56,6 +56,7 @@ const DEFAULT_PERIODS: PeriodOption[] = [
 
 // Part de la card (depuis la droite) occupée par le graphe.
 const REGION_W = 62; // %
+const CHART_TOP = 82;
 // Variation sous ce seuil = "stable" → accent neutre.
 const NEUTRAL_PCT = 0.5;
 
@@ -63,7 +64,7 @@ const SIZES: Record<
   CardSize,
   { minH: string; pad: string; footer: string; title: string; headline: string }
 > = {
-  sm: { minH: 'min-h-[260px]', pad: 'px-6 pt-5', footer: 'px-6 py-3', title: 'text-[15px]', headline: 'text-[46px]' },
+  sm: { minH: 'min-h-[340px]', pad: 'px-6 pt-5', footer: 'px-6 py-3', title: 'text-[15px]', headline: 'text-[46px]' },
   md: { minH: 'min-h-[380px]', pad: 'px-8 pt-7', footer: 'px-8 py-4', title: 'text-[17px]', headline: 'text-[72px]' },
   lg: { minH: 'min-h-[460px]', pad: 'px-10 pt-9', footer: 'px-10 py-5', title: 'text-[19px]', headline: 'text-[88px]' },
 };
@@ -215,7 +216,10 @@ export default function ProgressMetricCard({
   return (
     <div className={shell}>
       {/* Zone du graphe (à droite, derrière le contenu) */}
-      <div className="absolute inset-y-0 right-0 z-0" style={{ width: `${REGION_W}%` }}>
+      <div
+        className="absolute bottom-0 right-0 z-0"
+        style={{ width: `${REGION_W}%`, top: CHART_TOP }}
+      >
         <div
           className="absolute inset-0"
           style={{ background: `linear-gradient(to left, ${color.stroke}1f, transparent 75%)` }}

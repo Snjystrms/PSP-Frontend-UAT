@@ -33,7 +33,16 @@ export function LoginForm() {
 
       if (!response.ok) {
         setIsBusy(false);
-        toast.error(`HTTP ${response.status}: ${payload?.message || "We couldn’t sign you in. Check your email and password, and confirm the payment service is available."}`);
+        toast.error(
+          Object.assign(
+            new Error(payload?.message || "We couldn’t sign you in. Check your email and password, and confirm the payment service is available."),
+            {
+              errorCode: payload?.error_code,
+              httpStatus: response.status,
+              details: payload?.details,
+            },
+          ),
+        );
         return;
       }
 

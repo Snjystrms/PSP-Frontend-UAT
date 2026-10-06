@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
       signal: AbortSignal.timeout(10_000),
     });
     console.info(`[Vaspan auth] POST ${backendBase()}/auth/login -> ${loginResponse.status}`);
-    const login = await loginResponse.json().catch(() => null) as { access_token?: unknown; expires_in_minutes?: unknown; message?: string; error_code?: string } | null;
+    const login = await loginResponse.json().catch(() => null) as { access_token?: unknown; expires_in_minutes?: unknown; message?: string; error_code?: string; details?: unknown } | null;
     if (!loginResponse.ok) {
-      return NextResponse.json({ message: login?.message ?? "The backend rejected this sign-in.", error_code: login?.error_code }, { status: loginResponse.status });
+      return NextResponse.json({ message: login?.message ?? "The backend rejected this sign-in.", error_code: login?.error_code, details: login?.details }, { status: loginResponse.status });
     }
     if (typeof login?.access_token !== "string" || !login.access_token) {
       console.error("[Vaspan auth] Login succeeded without an access token in the response.");

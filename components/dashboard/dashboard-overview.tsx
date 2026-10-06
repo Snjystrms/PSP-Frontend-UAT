@@ -1,7 +1,10 @@
 "use client";
 
 import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
   BadgeCheck,
+  Building2,
   CircleX,
   Clock3,
   LayoutDashboard,
@@ -51,25 +54,67 @@ const summaryCards = [
     trend: "Needs review",
   },
   {
-    title: "Approval rate",
-    key: "approval",
+    title: "Pending deposits",
+    key: "pending_deposits",
+    icon: ArrowDownToLine,
+    color: "text-amber-700 bg-amber-500/10",
+    trend: "Needs review",
+  },
+  {
+    title: "Pending withdrawals",
+    key: "pending_withdrawals",
+    icon: ArrowUpFromLine,
+    color: "text-amber-700 bg-amber-500/10",
+    trend: "Needs review",
+  },
+  {
+    title: "Approved deposits",
+    key: "approved_deposits",
     icon: BadgeCheck,
     color: "text-emerald-700 bg-emerald-500/10",
-    trend: "approved share",
+    trend: "Cleared by review",
   },
   {
-    title: "Rejected requests",
-    key: "rejected",
+    title: "Approved withdrawals",
+    key: "approved_withdrawals",
+    icon: BadgeCheck,
+    color: "text-emerald-700 bg-emerald-500/10",
+    trend: "Cleared by review",
+  },
+  {
+    title: "Rejected deposits",
+    key: "rejected_deposits",
     icon: CircleX,
     color: "text-rose-700 bg-rose-500/10",
-    trend: "declined by review",
+    trend: "Declined by review",
   },
   {
-    title: "Reversed requests",
-    key: "reversed",
+    title: "Rejected withdrawals",
+    key: "rejected_withdrawals",
+    icon: CircleX,
+    color: "text-rose-700 bg-rose-500/10",
+    trend: "Declined by review",
+  },
+  {
+    title: "Reversed deposits",
+    key: "reversed_deposits",
     icon: RotateCcw,
     color: "text-violet-700 bg-violet-500/10",
-    trend: "sent back",
+    trend: "Returned for review",
+  },
+  {
+    title: "Reversed withdrawals",
+    key: "reversed_withdrawals",
+    icon: RotateCcw,
+    color: "text-violet-700 bg-violet-500/10",
+    trend: "Returned for review",
+  },
+  {
+    title: "PSP partners",
+    key: "total_psp_count",
+    icon: Building2,
+    color: "text-sky-700 bg-sky-500/10",
+    trend: "Available in this portal",
   },
 ];
 
@@ -91,7 +136,7 @@ function DashboardKpiCard({
   const patternId = `dashboard-dots-${useId().replace(/:/g, "")}`;
 
   return (
-    <article className="ib-portal-metric relative isolate flex min-h-[260px] flex-col justify-between overflow-hidden rounded-[28px] p-5">
+    <article className="ib-portal-metric relative isolate flex min-h-[170px] flex-col justify-between overflow-hidden rounded-[28px] p-4">
       <div className="pointer-events-none absolute inset-y-0 right-0 -z-10 w-[62%]">
         <div className="absolute inset-0 bg-gradient-to-l from-primary/10 to-transparent" />
         <div
@@ -124,7 +169,7 @@ function DashboardKpiCard({
             <TrendingUp className="size-3.5" />
             {trend}
           </span>
-          <span className="text-muted-foreground">from live requests</span>
+          <span className="text-muted-foreground">from live data</span>
         </p>
       </div>
     </article>
@@ -141,13 +186,19 @@ export function DashboardOverview() {
   const approved = overview?.approved ?? 0;
   const rejected = overview?.rejected ?? 0;
   const reversed = overview?.reversed ?? 0;
-  const values: Record<string, string | number> = {
+  const values: Record<string, number> = {
     deposit: dashboard?.deposits.total ?? 0,
     withdrawal: dashboard?.withdrawals.total ?? 0,
     pending: dashboard?.pending_requests ?? 0,
-    approval: `${dashboard?.approval_rate ?? 0}%`,
-    rejected: overview?.rejected ?? 0,
-    reversed: overview?.reversed ?? 0,
+    pending_deposits: dashboard?.pending_deposits ?? 0,
+    pending_withdrawals: dashboard?.pending_withdrawals ?? 0,
+    approved_deposits: dashboard?.approved_deposits ?? 0,
+    approved_withdrawals: dashboard?.approved_withdrawals ?? 0,
+    rejected_deposits: dashboard?.rejected_deposits ?? 0,
+    rejected_withdrawals: dashboard?.rejected_withdrawals ?? 0,
+    reversed_deposits: dashboard?.reversed_deposits ?? 0,
+    reversed_withdrawals: dashboard?.reversed_withdrawals ?? 0,
+    total_psp_count: dashboard?.total_psp_count ?? 0,
   };
   const recent = dashboard?.recent_transactions ?? [];
   const pendingStop = totalRequests ? (pending / totalRequests) * 100 : 0;
@@ -183,7 +234,7 @@ export function DashboardOverview() {
             <span aria-hidden>✦</span>
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Live request activity from the payment operations backend.
+            Live request activity from the payment operations server.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -193,7 +244,7 @@ export function DashboardOverview() {
           </Button>
         </div>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:items-stretch">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5 xl:items-stretch">
         {summaryCards.map(({ title, key, icon, color, trend }) => (
           <DashboardKpiCard
             key={key}
@@ -216,6 +267,7 @@ export function DashboardOverview() {
           unit="requests"
           data={depositSeries}
           dateFormatter={(date) => date}
+          accent="emerald"
           size="sm"
           className="ib-portal-metric"
           loading={isLoading}
@@ -229,6 +281,7 @@ export function DashboardOverview() {
           unit="requests"
           data={withdrawalSeries}
           dateFormatter={(date) => date}
+          accent="emerald"
           size="sm"
           className="ib-portal-metric"
           loading={isLoading}
@@ -329,7 +382,7 @@ export function DashboardOverview() {
             </ResponsiveContainer>
           </div>
         </section>
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+        <section className="ib-portal-metric rounded-2xl bg-card p-5 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-semibold">Requests overview</h2>
@@ -394,7 +447,7 @@ export function DashboardOverview() {
           </div>
         </section>
       </div>
-      <section className="overflow-hidden rounded-2xl border border-border bg-card">
+      <section className="ib-portal-metric overflow-hidden rounded-2xl bg-card">
         <div className="flex items-center justify-between border-b border-border p-5">
           <div>
             <h2 className="font-semibold">Recent transactions</h2>

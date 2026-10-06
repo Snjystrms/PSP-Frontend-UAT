@@ -7,6 +7,7 @@ import {
   ArrowUpFromLine,
   Check,
   Clock3,
+  MessageCircle,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -27,6 +28,7 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { SerialNumberCell } from "@/components/ui/serial-number-cell";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { RequestProofPreview } from "@/components/requests/request-proof-preview";
+import { RequestChatDialog } from "@/components/chat/request-chat-dialog";
 import { TableSkeletonRows } from "@/components/ui/table-skeleton-rows";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -45,6 +47,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useRequestDetail, useRequestPage } from "@/lib/queries/requests";
+import { usePortalChats } from "@/lib/queries/chats";
 import { usePsps } from "@/lib/queries/psps";
 
 const money = (amount: number, currency: string) => {
@@ -96,6 +99,11 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
   const { data: page, isLoading, isError, refetch } = pageQuery;
   const data = page?.items ?? [];
   const user = useAuthUser();
+  const chatList = usePortalChats({ kind, limit: 200 });
+  const chatsByRequest = useMemo(
+    () => new Map((chatList.data?.items ?? []).map((chat) => [chat.transaction_id, chat])),
+    [chatList.data?.items],
+  );
   const pspQuery = usePsps(user?.role === "admin");
   const mutation = useUpdateRequest();
   const reverseMutation = useReverseRequest();
@@ -106,6 +114,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
     status: "approved" | "rejected" | "reversed";
   } | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [chatRequest, setChatRequest] = useState<PaymentRequest | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [createPspCode, setCreatePspCode] = useState("all");
@@ -342,7 +351,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1020px] text-left text-sm">
+            <table className="w-full min-w-[1180px] text-left text-sm">
               <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="w-20 whitespace-nowrap px-4 py-3 font-medium">Sr. No.</th>
@@ -355,12 +364,13 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
                   <th className="px-5 py-3 font-medium">PSP</th>
                   <th className="px-5 py-3 font-medium">Submitted</th>
                   <th className="px-5 py-3 font-medium">Status</th>
+                  <th className="px-5 py-3 font-medium">Chat</th>
                   <th className="px-5 py-3 font-medium">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading ? (
-                  <TableSkeletonRows columns={9} cellClassName="px-5 py-4" />
+                  <TableSkeletonRows columns={10} cellClassName="px-5 py-4" />
                 ) : (
                   rows.map((row, index) => (
                     <tr
@@ -427,6 +437,34 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
                           )}
                           {row.status}
                         </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        {(() => {
+                          const chat = chatsByRequest.get(row.id);
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => setChatRequest(row)}
+                              aria-label={`Open chat for request ${row.id}`}
+                              className="flex w-52 min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <MessageCircle className="size-4 shrink-0 text-muted-foreground" />
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-xs font-medium">
+                                  {chat ? "Latest message" : "Start a chat"}
+                                </span>
+                                <span className="block truncate text-xs text-muted-foreground">
+                                  {chat?.last_message || (chat ? "Open conversation" : "Message the other party")}
+                                </span>
+                              </span>
+                              {Boolean(chat?.unread_count) && (
+                                <span className="grid min-w-5 shrink-0 place-items-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                                  {chat?.unread_count}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })()}
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1">
@@ -880,6 +918,14 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <RequestChatDialog
+        request={chatRequest}
+        kind={kind}
+        open={Boolean(chatRequest)}
+        onOpenChange={(open) => {
+          if (!open) setChatRequest(null);
+        }}
+      />
     </>
   );
 }

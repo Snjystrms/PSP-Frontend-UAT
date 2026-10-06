@@ -40,6 +40,15 @@ export type PortalDashboard = {
   deposits: DashboardRequestCard;
   withdrawals: DashboardRequestCard;
   pending_requests: number;
+  pending_deposits: number;
+  pending_withdrawals: number;
+  approved_deposits: number;
+  approved_withdrawals: number;
+  rejected_deposits: number;
+  rejected_withdrawals: number;
+  reversed_deposits: number;
+  reversed_withdrawals: number;
+  total_psp_count: number;
   approval_rate: number;
   activity: Array<{
     date: string;
@@ -86,6 +95,7 @@ export type PortalChatSummary = {
   closed_at: string | null;
   created_at: string | null;
   last_message_at: string | null;
+  last_message?: string | null;
   unread_count: number;
 };
 
@@ -108,10 +118,37 @@ class BackendRequestError extends Error {
     message: string,
     readonly errorCode?: string,
     readonly httpStatus?: number,
+    readonly details: Array<{ field?: string; message: string }> = [],
   ) {
     super(message);
     this.name = "BackendRequestError";
   }
+}
+
+function readErrorDetails(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const detail = entry as {
+      field?: unknown;
+      message?: unknown;
+      msg?: unknown;
+      loc?: unknown;
+    };
+    const field =
+      typeof detail.field === "string"
+        ? detail.field
+        : Array.isArray(detail.loc)
+          ? detail.loc.filter((part): part is string => typeof part === "string").at(-1)
+          : undefined;
+    const message =
+      typeof detail.message === "string"
+        ? detail.message
+        : typeof detail.msg === "string"
+          ? detail.msg
+          : undefined;
+    return message ? [{ field, message }] : [];
+  });
 }
 
 async function backendRequest<T>(path: string, init?: RequestInit): Promise<T> {
@@ -133,7 +170,13 @@ async function backendRequest<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     const errorBody =
       body && typeof body === "object"
-        ? (body as { message?: string; error?: string; error_code?: string })
+        ? (body as {
+            message?: string;
+            error?: string;
+            error_code?: string;
+            details?: unknown;
+            detail?: unknown;
+          })
         : null;
     const message =
       errorBody?.message ??
@@ -143,6 +186,7 @@ async function backendRequest<T>(path: string, init?: RequestInit): Promise<T> {
       message,
       errorBody?.error_code,
       response.status,
+      readErrorDetails(errorBody?.details ?? errorBody?.detail),
     );
   }
   return body as T;

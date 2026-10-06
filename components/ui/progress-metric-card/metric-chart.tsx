@@ -89,6 +89,8 @@ export function MetricChart({
 
   const renderTooltip = ({ active, payload, label }: TooltipContentProps) => {
     if (!active || !payload?.length) return null;
+    const tooltipDate =
+      (payload[0]?.payload as { date?: string } | undefined)?.date ?? label;
     const rows: TooltipRow[] = payload.map((p) => ({
       name: String(p.name ?? ""),
       value: Number(p.value ?? 0),
@@ -97,7 +99,7 @@ export function MetricChart({
     return (
       <div className="pointer-events-none rounded-xl border border-border bg-popover px-3 py-2 text-xs shadow-lg">
         <p className="mb-1 font-medium text-popover-foreground">
-          {dateFormatter(String(label ?? ""))}
+          {dateFormatter(String(tooltipDate ?? ""))}
         </p>
         {rows.map((r) => (
           <p key={r.name} className="flex items-center gap-1.5 text-muted-foreground">
@@ -118,7 +120,7 @@ export function MetricChart({
   if (view === "bar") {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={merged} margin={{ top: 24, right: 8, bottom: 8, left: 8 }}>
+        <BarChart data={merged} margin={{ top: 12, right: 8, bottom: 8, left: 8 }}>
           <Tooltip content={renderTooltip} cursor={{ fill: "transparent" }} />
           {series.map((s) => (
             <Bar
@@ -136,7 +138,7 @@ export function MetricChart({
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={merged} margin={{ top: 24, right: 0, bottom: 0, left: 0 }}>
+      <AreaChart data={merged} margin={{ top: 12, right: 0, bottom: 4, left: 0 }}>
         <defs>
           {series.map((s) => (
             <linearGradient
@@ -147,7 +149,7 @@ export function MetricChart({
               x2="0"
               y2="1"
             >
-              <stop offset="0%" stopColor={s.color} stopOpacity={0.28} />
+              <stop offset="0%" stopColor={s.color} stopOpacity={0.34} />
               <stop offset="100%" stopColor={s.color} stopOpacity={0} />
             </linearGradient>
           ))}
@@ -159,10 +161,10 @@ export function MetricChart({
             type="monotone"
             dataKey={s.name}
             stroke={s.color}
-            strokeWidth={2}
+            strokeWidth={2.5}
             fill={`url(#fill-${s.name.replace(/\s+/g, "-")})`}
             dot={false}
-            activeDot={{ r: 3 }}
+            activeDot={{ r: 4, strokeWidth: 0, fill: s.color }}
           />
         ))}
       </AreaChart>

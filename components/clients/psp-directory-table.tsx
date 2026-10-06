@@ -97,6 +97,7 @@ export function PspDirectoryTable() {
     values: PspCredentials;
   } | null>(null);
   const [rotating, setRotating] = useState<BackendPsp | null>(null);
+  const [deleting, setDeleting] = useState<BackendPsp | null>(null);
   const [graceHours, setGraceHours] = useState("");
   const [rotateSalt, setRotateSalt] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
@@ -175,15 +176,6 @@ export function PspDirectoryTable() {
         },
       },
     );
-  }
-
-  function confirmDelete(psp: BackendPsp) {
-    if (
-      window.confirm(
-        `Delete ${psp.psp_name} (${psp.psp_code})? This cannot be undone.`,
-      )
-    )
-      remove.mutate(psp.psp_code);
   }
 
   function clearCredentials() {
@@ -323,7 +315,7 @@ export function PspDirectoryTable() {
                             aria-label={`Delete ${psp.psp_name}`}
                             title="Delete PSP"
                             disabled={remove.isPending}
-                            onClick={() => confirmDelete(psp)}
+                            onClick={() => setDeleting(psp)}
                           >
                             <Trash2 className="size-4 text-destructive" />
                           </Button>
@@ -590,6 +582,46 @@ export function PspDirectoryTable() {
           )}
           <DialogFooter>
             <Button onClick={clearCredentials}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(deleting)}
+        onOpenChange={(open) => {
+          if (!open && !remove.isPending) setDeleting(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete PSP partner?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete {deleting?.psp_name} ({deleting?.psp_code}).
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleting(null)}
+              disabled={remove.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={!deleting || remove.isPending}
+              onClick={() => {
+                if (!deleting) return;
+                remove.mutate(deleting.psp_code, {
+                  onSuccess: () => setDeleting(null),
+                });
+              }}
+            >
+              {remove.isPending ? "Deleting…" : "Delete partner"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

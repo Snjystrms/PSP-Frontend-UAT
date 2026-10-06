@@ -14,10 +14,11 @@ export function usePortalChats(filters: {
   status?: "open" | "closed";
   kind?: RequestKind;
   unread?: boolean;
+  limit?: number;
 } = {}) {
   return useQuery({
     queryKey: ["portal-chats", filters],
-    queryFn: () => fetchPortalChats({ ...filters, limit: 100, offset: 0 }),
+    queryFn: () => fetchPortalChats({ ...filters, limit: filters.limit ?? 100, offset: 0 }),
     refetchInterval: 15_000,
     refetchOnWindowFocus: true,
   });

@@ -11,7 +11,11 @@ export type ToastErrorCode = {
   http_status: number;
   message: string;
 };
-type ApiError = Error & { errorCode?: string; httpStatus?: number };
+type ApiError = Error & {
+  errorCode?: string;
+  httpStatus?: number;
+  details?: Array<{ field?: string; message: string }>;
+};
 
 let errorCodeCatalog: ToastErrorCode[] = [];
 
@@ -32,7 +36,12 @@ function showToast(
   message: string,
   variant: ToastVariant,
   duration = 4500,
-  extra?: { title?: string; metadata?: string; detail?: string },
+  extra?: {
+    title?: string;
+    metadata?: string;
+    detail?: string;
+    details?: Array<{ field?: string; message: string }>;
+  },
 ) {
   const { title: defaultTitle, Icon, iconClass, borderClass } = variants[variant];
   const title = extra?.title ?? defaultTitle;
@@ -43,7 +52,7 @@ function showToast(
       animate="animate"
       exit="exit"
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`relative flex w-[min(20rem,calc(100vw-2rem))] items-start gap-3 rounded-2xl border ${borderClass} bg-card p-4 pr-10 text-card-foreground shadow-xl shadow-black/10`}
+      className={`relative flex w-[min(26rem,calc(100vw-2rem))] items-start gap-3 rounded-2xl border ${borderClass} bg-card p-4 pr-10 text-card-foreground shadow-xl shadow-black/10`}
       role={variant === "error" ? "alert" : "status"}
     >
       <Icon className={`mt-0.5 size-[18px] shrink-0 ${iconClass}`} strokeWidth={1.8} />
@@ -54,6 +63,20 @@ function showToast(
           <p className="break-words pt-0.5 text-xs leading-5 text-muted-foreground">
             {extra.detail}
           </p>
+        )}
+        {extra?.details && extra.details.length > 0 && (
+          <ul className="mt-2 max-h-40 space-y-1.5 overflow-y-auto rounded-lg bg-muted/60 p-2.5 text-xs leading-5">
+            {extra.details.map((item, index) => (
+              <li key={`${item.field ?? "detail"}-${index}`} className="break-words">
+                {item.field && (
+                  <span className="font-semibold text-foreground">
+                    {humanizeErrorName(item.field.split(/[./]/).filter(Boolean).at(-1) ?? item.field)}: {" "}
+                  </span>
+                )}
+                {friendlyDetail(item.field, item.message)}
+              </li>
+            ))}
+          </ul>
         )}
         {extra?.metadata && (
           <p className="pt-1 text-[10px] font-medium tracking-wide text-muted-foreground/80">
@@ -89,9 +112,24 @@ function humanizeErrorName(name: string) {
     .join(" ");
 }
 
+function friendlyDetail(field: string | undefined, message: string) {
+  let detail = message.trim().replace(/^value error,\s*/i, "");
+  if (field) {
+    const key = field.split(/[./]/).filter(Boolean).at(-1) ?? field;
+    const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    detail = detail.replace(new RegExp(`^${escaped}[\\s:,-]*`, "i"), "");
+  }
+  if (!detail) return "Please check this value.";
+  return detail.charAt(0).toUpperCase() + detail.slice(1);
+}
+
 function showApiError(error: ApiError, duration?: number) {
   const code = error.errorCode;
-  if (!code) return showToast(error.message, "error", duration);
+  const details = Array.isArray(error.details) ? error.details : [];
+  const toastDuration = duration ?? (details.length ? 8500 : 6000);
+  if (!code) {
+    return showToast(error.message, "error", toastDuration, { details });
+  }
 
   const definition = errorCodeCatalog.find((entry) => entry.error_code === code);
   const detail =
@@ -101,13 +139,20 @@ function showApiError(error: ApiError, duration?: number) {
     .join(" · ");
 
   return showToast(
-    definition?.message ?? error.message,
+    details.length
+      ? `${error.message.replace(/[.\s]+$/, "")}. Please review the field details below and try again.`
+      : definition?.message ?? error.message,
     "error",
-    duration,
+    toastDuration,
     {
-      title: definition ? humanizeErrorName(definition.name) : "Request failed",
+      title: definition
+        ? humanizeErrorName(definition.name)
+        : code === "E1000"
+          ? "Check your information"
+          : "Couldn’t complete request",
       metadata,
-      detail,
+      detail: details.length ? undefined : detail,
+      details,
     },
   );
 }
