@@ -6,6 +6,7 @@ import { useState, type FormEvent } from "react";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
+import { LogoCube } from "@/components/ui/logo-cube";
 
 export function LoginForm() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export function LoginForm() {
       const payload = await response.json().catch(() => ({}));
 
       if (!response.ok) {
+        setIsBusy(false);
         toast.error(`HTTP ${response.status}: ${payload?.message || "We couldn’t sign you in. Check your email and password, and confirm the payment service is available."}`);
         return;
       }
@@ -38,14 +40,24 @@ export function LoginForm() {
       router.replace("/dashboard");
       router.refresh();
     } catch (cause) {
+      setIsBusy(false);
       console.error("[Vaspan login] request failed", cause instanceof Error ? cause.message : "Unknown error");
       toast.error("Couldn’t reach the payment service. Please try again.");
-    } finally {
-      setIsBusy(false);
     }
   }
 
   return (
+    <>
+    {isBusy && (
+      <div
+        className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/85 px-4 backdrop-blur-md"
+        role="status"
+        aria-live="polite"
+      >
+        <LogoCube size={76} duration={2.4} />
+        <p className="-mt-3 text-sm font-medium text-foreground">Signing you in…</p>
+      </div>
+    )}
     <section className="relative z-10 grid w-full max-w-6xl grid-cols-1 overflow-hidden rounded-[2rem] border border-border bg-card p-2 text-card-foreground shadow-[0_32px_100px_-36px_rgba(3,31,39,.42)] lg:grid-cols-[1.02fr_.98fr]">
       <aside className="vaspan-login-pattern vaspan-login-artwork relative hidden min-h-[560px] flex-col justify-between overflow-hidden rounded-[1.55rem] p-8 text-white lg:flex xl:p-12">
         <span aria-hidden="true" className="vaspan-login-stars vaspan-login-stars-small" />
@@ -92,5 +104,6 @@ export function LoginForm() {
         </div>
       </div>
     </section>
+    </>
   );
 }
