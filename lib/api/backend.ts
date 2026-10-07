@@ -168,6 +168,13 @@ async function backendRequest<T>(path: string, init?: RequestInit): Promise<T> {
     body = raw;
   }
   if (!response.ok) {
+    if (
+      response.status === 401 &&
+      typeof window !== "undefined" &&
+      window.location.pathname !== "/login"
+    ) {
+      window.location.replace("/login");
+    }
     const errorBody =
       body && typeof body === "object"
         ? (body as {

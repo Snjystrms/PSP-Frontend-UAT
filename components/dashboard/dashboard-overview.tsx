@@ -463,10 +463,10 @@ export function DashboardOverview() {
           </a>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px] text-left text-sm">
+          <table className="w-full min-w-[820px] text-left text-sm">
             <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
               <tr>
-                {["Transaction", "Client", "Date", "Amount", "Status"].map(
+                {["Transaction", "Client", "PSP", "Date", "Amount", "Status"].map(
                   (label) => (
                     <th key={label} className="px-5 py-3 font-medium">
                       {label}
@@ -477,16 +477,24 @@ export function DashboardOverview() {
             </thead>
             <tbody className="divide-y divide-border">
               {isLoading ? (
-                <TableSkeletonRows columns={5} cellClassName="px-5 py-4" />
+                <TableSkeletonRows columns={6} cellClassName="px-5 py-4" />
               ) : recent.map((row) => (
                 <tr key={row.id}>
                   <td className="px-5 py-4 font-medium">
                     {row.id}
-                    <span className="ml-2 text-xs font-normal capitalize text-muted-foreground">
+                    <span className="block text-xs font-normal capitalize text-muted-foreground">
                       {row.kind}
                     </span>
                   </td>
-                  <td className="px-5 py-4">{row.customer_name}</td>
+                  <td className="px-5 py-4">
+                    <span className="block font-medium">{row.customer_name}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {row.customer_email}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4 text-muted-foreground">
+                    {row.psp_code ?? "—"}
+                  </td>
                   <td className="px-5 py-4 text-muted-foreground">
                     {new Intl.DateTimeFormat("en", {
                       month: "short",
