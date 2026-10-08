@@ -137,7 +137,7 @@ function DashboardKpiCard({
   const patternId = `dashboard-dots-${useId().replace(/:/g, "")}`;
 
   return (
-    <Link href={href} aria-label={`View ${title.toLowerCase()}`} className="ib-portal-metric relative isolate flex min-h-[170px] flex-col justify-between overflow-hidden rounded-[28px] p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+    <Link href={href} aria-label={`View ${title.toLowerCase()}`} className="ib-portal-metric relative isolate flex min-h-[160px] flex-col justify-between overflow-hidden rounded-[28px] p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
       <div className="pointer-events-none absolute inset-y-0 right-0 -z-10 w-[62%]">
         <div className="absolute inset-0 bg-gradient-to-l from-primary/10 to-transparent" />
         <div
@@ -157,17 +157,17 @@ function DashboardKpiCard({
           </svg>
         </div>
       </div>
-      <div className="relative z-10 flex items-center gap-6">
+      <div className="relative z-10 flex flex-row-reverse items-center justify-between gap-4">
         <Icon className="size-7 shrink-0 text-foreground" aria-hidden="true" />
         <div className="min-w-0">
-          <p className="text-sm text-muted-foreground">{title}</p>
+          <p className="text-xs font-semibold uppercase leading-tight tracking-wide text-foreground">{title}</p>
           <p className="mt-1 text-3xl font-semibold tracking-tight">
             {loading ? "—" : value}
           </p>
         </div>
       </div>
-      <div>
-        <p className="mt-3 flex items-center gap-1.5 text-xs">
+      <div className="relative z-10 mt-4 border-t border-border/70 pt-3">
+        <p className="flex flex-wrap items-center gap-1.5 text-xs">
           <span className="inline-flex items-center gap-1 font-medium text-muted-foreground">
             <TrendingUp className="size-3.5" />
             {trend}
