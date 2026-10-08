@@ -329,8 +329,13 @@
 
 .ib-portal-metric {
   border: 1px solid transparent;
+  /* Fill color can be overridden per-element by declaring --ib-portal-metric-fill;
+     falls back to --card when unset. */
   background:
-    linear-gradient(var(--card), var(--card)) padding-box,
+    linear-gradient(
+      var(--ib-portal-metric-fill, var(--card)),
+      var(--ib-portal-metric-fill, var(--card))
+    ) padding-box,
     linear-gradient(118deg, color-mix(in srgb, var(--primary) 24%, var(--border)) 0%, var(--primary) 52%, color-mix(in srgb, var(--accent) 55%, var(--border)) 100%) border-box;
   box-shadow: 0 18px 42px -34px color-mix(in srgb, var(--primary) 72%, transparent);
   transition: transform 220ms ease, box-shadow 220ms ease;

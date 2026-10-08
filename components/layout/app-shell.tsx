@@ -154,13 +154,13 @@ function SidebarSignOut({ onSignOut }: { onSignOut: () => void }) {
   return (
     <Button
       variant="ghost"
-      className={`w-full ${compact ? "justify-center px-0" : "justify-start"}`}
+      className={`ib-portal-metric [--ib-portal-metric-fill:var(--muted)] w-full justify-center rounded-xl text-sm font-semibold text-[#00DDFF] hover:text-[#00DDFF] focus-visible:ring-4 focus-visible:ring-[#00DDFF]/30 ${compact ? "px-0" : ""}`}
       onClick={onSignOut}
       aria-label="Sign out"
       title={compact ? "Sign out" : undefined}
     >
-      <LogOut className="size-4 shrink-0" />
       {!compact && <span>Sign out</span>}
+      <LogOut className="size-4 shrink-0" />
     </Button>
   );
 }
