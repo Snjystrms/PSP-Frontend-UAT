@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useAuthUser } from "@/components/auth/auth-user-context";
 import {
   ArrowDownToLine,
@@ -12,6 +12,7 @@ import {
   RefreshCw,
   RotateCcw,
   Search,
+  TriangleAlert,
   X,
 } from "lucide-react";
 import {
@@ -73,6 +74,84 @@ const statusStyle: Record<RequestStatus, string> = {
   rejected: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
   reversed: "bg-violet-500/10 text-violet-700 dark:text-violet-400",
 };
+const createdByLabel = (value?: string) => {
+  if (!value) return "—";
+  if (value === "admin") return "Admin";
+  if (value === "crm") return "CRM";
+  if (value === "psp" || value === "customer") return "Customer";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+function StatusBadge({ status }: { status: RequestStatus }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium capitalize ${statusStyle[status]}`}
+    >
+      {status === "pending" || status === "processing" ? (
+        <Clock3 className="size-3" />
+      ) : status === "approved" ? (
+        <Check className="size-3" />
+      ) : status === "reversed" ? (
+        <RotateCcw className="size-3" />
+      ) : (
+        <X className="size-3" />
+      )}
+      {status}
+    </span>
+  );
+}
+
+function DetailSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-lg border border-border">
+      <h4 className="border-b border-border bg-muted/40 px-4 py-2 text-xs font-medium text-muted-foreground">
+        {title}
+      </h4>
+      <div className="divide-y divide-border">{children}</div>
+    </section>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  stack = false,
+}: {
+  label: string;
+  value: ReactNode;
+  stack?: boolean;
+}) {
+  if (stack) {
+    return (
+      <div className="px-4 py-3">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="mt-1 break-words text-sm">{value}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-start justify-between gap-4 px-4 py-2.5">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="max-w-[65%] break-words text-right text-sm font-medium">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function FormSectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h4 className="border-t border-border pt-4 text-xs font-medium text-muted-foreground first:border-t-0 first:pt-0 sm:col-span-2">
+      {children}
+    </h4>
+  );
+}
 
 function ScreenshotField({
   file,
@@ -385,17 +464,20 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1180px] text-left text-sm">
+            <table
+              className={`w-full text-left text-sm ${kind === "withdrawal" ? "min-w-[1300px]" : "min-w-[1180px]"}`}
+            >
               <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="w-20 whitespace-nowrap px-4 py-3 font-medium">Sr. No.</th>
                   <th className="px-5 py-3 font-medium">Request</th>
                   <th className="px-5 py-3 font-medium">Customer</th>
                   <th className="px-5 py-3 font-medium">Amount</th>
-                  <th className="px-5 py-3 font-medium">
-                    {kind === "withdrawal" ? "Destination" : "Deposit account"}
-                  </th>
+                  {kind === "withdrawal" && (
+                    <th className="px-5 py-3 font-medium">Destination</th>
+                  )}
                   <th className="px-5 py-3 font-medium">PSP</th>
+                  <th className="px-5 py-3 font-medium">Req made by</th>
                   <th className="px-5 py-3 font-medium">Submitted</th>
                   <th className="px-5 py-3 font-medium">Status</th>
                   <th className="px-5 py-3 font-medium">Chat</th>
@@ -404,7 +486,10 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading ? (
-                  <TableSkeletonRows columns={10} cellClassName="px-5 py-4" />
+                  <TableSkeletonRows
+                    columns={kind === "withdrawal" ? 11 : 10}
+                    cellClassName="px-5 py-4"
+                  />
                 ) : (
                   rows.map((row, index) => (
                     <tr
@@ -438,39 +523,44 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
                       <td className="px-5 py-4 font-semibold">
                         {money(row.amount, row.currency)}
                       </td>
-                      <td className="px-5 py-4">
-                        <span className="block text-muted-foreground">
-                          {row.bankName || row.bankAccountId || "—"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {row.accountNumber ||
-                            row.accountName ||
-                            row.bankCode ||
-                            ""}
-                        </span>
-                      </td>
+                      {kind === "withdrawal" && (
+                        <td className="px-5 py-4">
+                          <span className="block text-muted-foreground">
+                            {row.bankName || row.bankAccountId || "—"}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {row.accountNumber || row.accountName || ""}
+                          </span>
+                          <span className="block font-mono text-xs text-muted-foreground">
+                            {row.bankCode || ""}
+                          </span>
+                        </td>
+                      )}
                       <td className="px-5 py-4 font-mono text-xs text-muted-foreground">
                         {row.pspCode || "—"}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                            row.createdBy === "admin"
+                              ? "bg-violet-500/10 text-violet-700 dark:text-violet-400"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {createdByLabel(row.createdBy)}
+                        </span>
+                        <span
+                          className="mt-1 block max-w-[190px] break-words text-xs text-muted-foreground line-clamp-2"
+                          title={row.requestComment || undefined}
+                        >
+                          {row.requestComment || "—"}
+                        </span>
                       </td>
                       <td className="px-5 py-4 text-muted-foreground">
                         {date(row.createdAt)}
                       </td>
                       <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium capitalize ${statusStyle[row.status]}`}
-                        >
-                          {row.status === "pending" ||
-                          row.status === "processing" ? (
-                            <Clock3 className="size-3" />
-                          ) : row.status === "approved" ? (
-                            <Check className="size-3" />
-                          ) : row.status === "reversed" ? (
-                            <RotateCcw className="size-3" />
-                          ) : (
-                            <X className="size-3" />
-                          )}
-                          {row.status}
-                        </span>
+                        <StatusBadge status={row.status} />
                       </td>
                       <td className="px-3 py-3">
                         {(() => {
@@ -596,7 +686,10 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
                 )}
                 {!isLoading && !isError && rows.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="px-5 py-14 text-center">
+                    <td
+                      colSpan={kind === "withdrawal" ? 11 : 10}
+                      className="px-5 py-14 text-center"
+                    >
                       <p className="font-medium">No matching requests</p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         Try another search or status filter.
@@ -628,19 +721,21 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
-          <DialogHeader>
+        <DialogContent className="grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] gap-0 overflow-hidden p-0 sm:max-w-xl">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>Create {kind} request</DialogTitle>
             <DialogDescription>
               Submit a request on behalf of a PSP. It will appear in the review
               queue.
             </DialogDescription>
           </DialogHeader>
+          <div className="min-h-0 overflow-y-auto px-6">
           <form
             id="create-payment-request"
-            className="grid gap-4 sm:grid-cols-2"
+            className="grid gap-4 pb-6 pt-1 sm:grid-cols-2"
             onSubmit={submitNewRequest}
           >
+            <FormSectionTitle>Request</FormSectionTitle>
             <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">
               PSP partner
               <Select value={createPspCode} onValueChange={setCreatePspCode}>
@@ -666,7 +761,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
               <Input name="customer_email" type="email" placeholder="customer@example.com" required />
             </label>
             <label className="grid gap-1.5 text-sm font-medium">
-              Amount (₹)
+              Amount
               <Input
                 name="amount"
                 type="number"
@@ -677,25 +772,24 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
                 placeholder="0.00"
               />
             </label>
-            {kind === "withdrawal" && (
-              <label className="grid gap-1.5 text-sm font-medium">
-                Currency
-                <Select name="currency" defaultValue="INR">
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["INR", "USD", "EUR"].map((item) => (
-                      <SelectItem key={item} value={item}>
-                        {item}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </label>
-            )}
+            <label className="grid gap-1.5 text-sm font-medium">
+              Currency
+              <Select name="currency" defaultValue="INR">
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {["INR", "USD", "EUR"].map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
             {kind === "deposit" ? (
               <>
+                <FormSectionTitle>Payment proof</FormSectionTitle>
                 <ScreenshotField
                   file={screenshotFile}
                   onFileChange={setScreenshotFile}
@@ -708,6 +802,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
               </>
             ) : (
               <>
+                <FormSectionTitle>Destination account</FormSectionTitle>
                 <label className="grid gap-1.5 text-sm font-medium">
                   Destination bank
                   <Input name="dest_bank_name" placeholder="e.g. HDFC Bank" maxLength={200} />
@@ -736,6 +831,7 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
                 />
               </>
             )}
+            <FormSectionTitle>Comment</FormSectionTitle>
             <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">
               Comment (optional)
               <textarea
@@ -747,7 +843,8 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
               />
             </label>
           </form>
-          <DialogFooter>
+          </div>
+          <DialogFooter className="border-t border-border px-6 py-4">
             <Button
               variant="outline"
               onClick={() => setCreateOpen(false)}
@@ -772,8 +869,19 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
             setDecision(null);
         }}
       >
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="gap-3">
+            <span
+              className={`grid size-10 place-items-center rounded-xl ${decision ? statusStyle[decision.status] : ""}`}
+            >
+              {decision?.status === "approved" ? (
+                <Check className="size-5" />
+              ) : decision?.status === "reversed" ? (
+                <RotateCcw className="size-5" />
+              ) : (
+                <X className="size-5" />
+              )}
+            </span>
             <DialogTitle>
               {decision?.status === "approved"
                 ? "Approve request"
@@ -782,21 +890,43 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
                   : "Reject request"}
             </DialogTitle>
             <DialogDescription>
-              {decision?.row.id} · {decision?.row.clientName} ·{" "}
-              {decision
-                ? money(decision.row.amount, decision.row.currency)
-                : ""}
-              {decision?.status === "reversed" && (
-                <span className="mt-2 block text-rose-600 dark:text-rose-400">
-                  Reversal is final and can only happen once.
-                </span>
-              )}
+              {decision ? `Record your decision for ${decision.row.id}.` : ""}
             </DialogDescription>
           </DialogHeader>
+          <div className="grid grid-cols-3 gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3">
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Customer</p>
+              <p
+                className="mt-0.5 truncate text-sm font-medium"
+                title={decision?.row.clientName}
+              >
+                {decision?.row.clientName}
+              </p>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Amount</p>
+              <p className="mt-0.5 text-sm font-semibold tabular-nums">
+                {decision
+                  ? money(decision.row.amount, decision.row.currency)
+                  : ""}
+              </p>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">PSP</p>
+              <p className="mt-0.5 truncate font-mono text-sm font-medium">
+                {decision?.row.pspCode || "—"}
+              </p>
+            </div>
+          </div>
           <label className="grid gap-2 text-sm font-medium">
-            {decision?.status === "approved"
-              ? "Review comment (optional)"
-              : "Reason (required)"}
+            <span className="flex items-baseline justify-between gap-2">
+              {decision?.status === "approved"
+                ? "Review comment (optional)"
+                : "Reason (required)"}
+              <span className="text-xs font-normal text-muted-foreground">
+                {reason.length}/2000
+              </span>
+            </span>
             <textarea
               value={reason}
               onChange={(event) => setReason(event.target.value)}
@@ -812,6 +942,12 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
               className="w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </label>
+          {decision?.status === "reversed" && (
+            <p className="flex items-start gap-2 rounded-lg border border-rose-500/25 bg-rose-500/10 px-3 py-2.5 text-sm text-rose-700 dark:text-rose-300">
+              <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+              Reversal is final and can only happen once.
+            </p>
+          )}
           <DialogFooter>
             <Button
               variant="outline"
@@ -822,6 +958,13 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
             </Button>
             <Button
               onClick={submitDecision}
+              className={
+                decision?.status === "approved"
+                  ? "bg-emerald-700 text-white hover:bg-emerald-800"
+                  : decision?.status === "rejected"
+                    ? "bg-rose-700 text-white hover:bg-rose-800"
+                    : "bg-violet-700 text-white hover:bg-violet-800"
+              }
               disabled={
                 mutation.isPending ||
                 reverseMutation.isPending ||
@@ -847,97 +990,129 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
           if (!open) setDetailId(null);
         }}
       >
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="grid-rows-[auto_minmax(0,1fr)_auto] max-h-[85vh] gap-0 overflow-hidden p-0 sm:max-w-xl">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>Request details</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="font-mono text-xs">
               {detailQuery.data?.id ?? detailId}
             </DialogDescription>
           </DialogHeader>
-          {detailQuery.isLoading ? (
-            <div className="grid gap-3 py-2 sm:grid-cols-2" aria-busy="true">
-              {Array.from({ length: 8 }, (_, index) => (
-                <div
-                  key={index}
-                  className="space-y-2 rounded-lg border border-border p-3"
-                >
-                  <Skeleton className="h-3 w-20" />
-                  <Skeleton className="h-4 w-3/4" />
-                </div>
-              ))}
+          <div className="min-h-0 overflow-y-auto px-6">
+            {detailQuery.isLoading ? (
+            <div className="grid gap-3 py-2" aria-busy="true">
+              <Skeleton className="h-16 w-full rounded-lg" />
+              <Skeleton className="h-36 w-full rounded-lg" />
+              <Skeleton className="h-24 w-full rounded-lg" />
+              <Skeleton className="h-24 w-full rounded-lg" />
+              <Skeleton className="h-24 w-full rounded-lg" />
             </div>
           ) : detailQuery.isError ? (
-            <div className="flex justify-end"><Button variant="outline" onClick={() => void detailQuery.refetch()}>Try again</Button></div>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => void detailQuery.refetch()}>
+                Try again
+              </Button>
+            </div>
           ) : (
             detailQuery.data && (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {[
-                  ["Customer", detailQuery.data.clientName],
-                  ["Email", detailQuery.data.clientId],
-                  [
-                    "Amount",
-                    money(detailQuery.data.amount, detailQuery.data.currency),
-                  ],
-                  ["Status", detailQuery.data.status],
-                  ["Reference", detailQuery.data.reference],
-                  [
-                    "Submitted by",
-                    detailQuery.data.createdBy === "admin"
-                      ? "Admin portal"
-                      : detailQuery.data.createdBy === "crm"
-                        ? "CRM"
-                        : "—",
-                  ],
-                  ["PSP", detailQuery.data.pspCode ?? "—"],
-                  ["Submitted", date(detailQuery.data.createdAt)],
-                  ["Reviewed by", detailQuery.data.reviewedBy ?? "—"],
-                  [
-                    "Reviewed at",
-                    detailQuery.data.reviewedAt
-                      ? date(detailQuery.data.reviewedAt)
-                      : "—",
-                  ],
-                  ["Review comment", detailQuery.data.comment ?? "—"],
-                  [
-                    "Callback attempts",
-                    String(detailQuery.data.callbackAttempts),
-                  ],
-                  [
-                    "Callback status",
-                    detailQuery.data.callbackSentAt
-                      ? `Sent ${date(detailQuery.data.callbackSentAt)}`
-                      : detailQuery.data.callbackFailed
-                        ? "Failed"
-                        : "Not sent",
-                  ],
-                ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="rounded-lg border border-border p-3"
-                  >
-                    <p className="text-xs text-muted-foreground">{label}</p>
-                    <p className="mt-1 break-words text-sm font-medium">
-                      {value}
+              <div className="flex flex-col gap-3 pb-6 pt-1">
+                <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-muted/40 px-4 py-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Amount</p>
+                    <p className="mt-0.5 text-xl font-semibold tabular-nums">
+                      {money(
+                        detailQuery.data.amount,
+                        detailQuery.data.currency,
+                      )}
                     </p>
                   </div>
-                ))}
+                  <StatusBadge status={detailQuery.data.status} />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <DetailSection title="Request">
+                  <DetailRow
+                    label="Submitted"
+                    value={date(detailQuery.data.createdAt)}
+                  />
+                  <DetailRow
+                    label="Reference"
+                    value={detailQuery.data.reference}
+                  />
+                  <DetailRow
+                    label="Requested by"
+                    value={createdByLabel(detailQuery.data.createdBy)}
+                  />
+                  {detailQuery.data.utrNumber && (
+                    <DetailRow
+                      label="UTR"
+                      value={detailQuery.data.utrNumber}
+                    />
+                  )}
+                  <DetailRow
+                    label="Request comment"
+                    value={detailQuery.data.requestComment || "—"}
+                    stack
+                  />
+                </DetailSection>
+                <DetailSection title="Customer">
+                  <DetailRow
+                    label="Name"
+                    value={detailQuery.data.clientName}
+                  />
+                  <DetailRow label="Email" value={detailQuery.data.clientId} />
+                  <DetailRow
+                    label="PSP"
+                    value={detailQuery.data.pspCode ?? "—"}
+                  />
+                </DetailSection>
+                <DetailSection title="Review">
+                  <DetailRow
+                    label="Reviewed by"
+                    value={detailQuery.data.reviewedBy ?? "—"}
+                  />
+                  <DetailRow
+                    label="Reviewed at"
+                    value={
+                      detailQuery.data.reviewedAt
+                        ? date(detailQuery.data.reviewedAt)
+                        : "—"
+                    }
+                  />
+                  <DetailRow
+                    label="Review comment"
+                    value={detailQuery.data.reviewComment || "—"}
+                    stack
+                  />
+                </DetailSection>
+                <DetailSection title="Callback">
+                  <DetailRow
+                    label="Attempts"
+                    value={String(detailQuery.data.callbackAttempts)}
+                  />
+                  <DetailRow
+                    label="Status"
+                    value={
+                      detailQuery.data.callbackSentAt
+                        ? `Sent ${date(detailQuery.data.callbackSentAt)}`
+                        : detailQuery.data.callbackFailed
+                          ? "Failed"
+                          : "Not sent"
+                    }
+                  />
+                </DetailSection>
+                </div>
                 {detailQuery.data.callbackLastError && (
-                  <p className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-sm text-rose-700 dark:text-rose-300 sm:col-span-2">
+                  <p className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-sm text-rose-700 dark:text-rose-300">
                     Callback error: {detailQuery.data.callbackLastError}
                   </p>
                 )}
                 {detailQuery.data.screenshotUrl && (
                   <RequestProofPreview url={detailQuery.data.screenshotUrl} />
                 )}
-                {detailQuery.data.utrNumber && (
-                  <p className="text-sm sm:col-span-2">
-                    UTR: {detailQuery.data.utrNumber}
-                  </p>
-                )}
               </div>
             )
           )}
-          <DialogFooter>
+          </div>
+          <DialogFooter className="border-t border-border px-6 py-4">
             <Button variant="outline" onClick={() => setDetailId(null)}>
               Close
             </Button>

@@ -17,6 +17,9 @@ export interface PaymentRequest {
   createdAt: string;
   reference: string;
   comment?: string;
+  requestComment?: string;
+  reviewComment?: string;
+  createdBy?: string;
   accountName?: string;
   accountNumber?: string;
   bankName?: string;

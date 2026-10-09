@@ -8,7 +8,7 @@ type BackendTransaction = {
   amount: number | string;
   currency: string;
   status: RequestStatus;
-  created_by?: "admin" | "crm";
+  created_by?: string;
   created_at: string;
   comment?: string | null;
   review_comment?: string | null;
@@ -280,6 +280,9 @@ function mapTransaction(
     reference:
       row.idempotency_key || row.psp_code || row.dest_account_number || "—",
     comment: row.review_comment ?? row.comment ?? undefined,
+    requestComment: row.comment ?? undefined,
+    reviewComment: row.review_comment ?? undefined,
+    createdBy: row.created_by,
     accountName: row.dest_account_name,
     accountNumber: row.dest_account_number,
     bankName: row.dest_bank_name,
