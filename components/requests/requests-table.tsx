@@ -74,6 +74,35 @@ const statusStyle: Record<RequestStatus, string> = {
   reversed: "bg-violet-500/10 text-violet-700 dark:text-violet-400",
 };
 
+function ScreenshotField({
+  file,
+  onFileChange,
+  required = false,
+  label = "Payment screenshot",
+}: {
+  file: File | null;
+  onFileChange: (file: File | null) => void;
+  required?: boolean;
+  label?: string;
+}) {
+  return (
+    <div className="grid gap-2 text-sm font-medium sm:col-span-2">
+      <label className="grid gap-1.5">
+        {label}
+        <input
+          name="screenshot"
+          type="file"
+          accept="image/png,image/jpeg,image/webp,application/pdf"
+          required={required}
+          onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
+          className="block w-full cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm file:font-medium"
+        />
+      </label>
+      {file && <RequestProofPreview file={file} />}
+    </div>
+  );
+}
+
 export function RequestsTable({ kind }: { kind: RequestKind }) {
   const [filter, setFilter] = useState<"all" | RequestStatus>("all");
   const [searchInput, setSearchInput] = useState("");
@@ -169,6 +198,11 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
     if (createPspCode === "all") return;
     const formData = new FormData(event.currentTarget);
     formData.set("psp_code", createPspCode);
+    // The screenshot is optional for withdrawals: skip sending an empty file part.
+    const screenshot = formData.get("screenshot");
+    if (screenshot instanceof File && screenshot.size === 0) {
+      formData.delete("screenshot");
+    }
     createRequest.mutate(formData, {
       onSuccess: () => {
         setCreateOpen(false);
@@ -662,24 +696,11 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
             )}
             {kind === "deposit" ? (
               <>
-                <div className="grid gap-2 text-sm font-medium sm:col-span-2">
-                  <label className="grid gap-1.5">
-                    Payment screenshot
-                    <input
-                      name="screenshot"
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp,application/pdf"
-                      required
-                      onChange={(event) =>
-                        setScreenshotFile(event.target.files?.[0] ?? null)
-                      }
-                      className="block w-full cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm file:font-medium"
-                    />
-                  </label>
-                  {screenshotFile && (
-                    <RequestProofPreview file={screenshotFile} />
-                  )}
-                </div>
+                <ScreenshotField
+                  file={screenshotFile}
+                  onFileChange={setScreenshotFile}
+                  required
+                />
                 <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">
                   UTR number (optional)
                   <Input name="utr_number" placeholder="Enter the payment UTR" maxLength={100} />
@@ -708,6 +729,11 @@ export function RequestsTable({ kind }: { kind: RequestKind }) {
                   Account holder
                   <Input name="dest_account_name" placeholder="Name on the bank account" maxLength={200} />
                 </label>
+                <ScreenshotField
+                  file={screenshotFile}
+                  onFileChange={setScreenshotFile}
+                  label="Payment screenshot (optional)"
+                />
               </>
             )}
             <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">
