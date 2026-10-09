@@ -70,12 +70,12 @@ const navigation = [
     icon: ClipboardList,
     roles: ["admin"],
   },
-  // {
-  //   label: "Support chat",
-  //   href: "/chat",
-  //   icon: MessageCircle,
-  //   roles: ["admin", "psp"],
-  // },
+  {
+    label: "Support chat",
+    href: "/chat",
+    icon: MessageCircle,
+    roles: ["admin", "psp"],
+  },
   {
     label: "My profile",
     href: "/profile",

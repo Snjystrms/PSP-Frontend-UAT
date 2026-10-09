@@ -257,6 +257,72 @@ export async function updatePortalChatStatus(
   );
 }
 
+// ---------- direct chat (admins <-> PSPs, not tied to a request) ----------
+
+export type DirectChatMessage = {
+  id: number;
+  sender_name: string;
+  sender_role: "admin" | "psp";
+  message: string | null;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  attachment_content_type: string | null;
+  attachment_size: number | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+export type DirectChatSummary = {
+  psp_code: string;
+  psp_name: string;
+  unread_count: number;
+  last_message: DirectChatMessage | null;
+};
+
+export type DirectChat = {
+  psp_code: string;
+  psp_name: string;
+  messages: DirectChatMessage[];
+};
+
+export async function fetchDirectChats(filters: {
+  unread?: boolean;
+  limit?: number;
+  offset?: number;
+} = {}) {
+  const query = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined) query.set(key, String(value));
+  });
+  return backendRequest<{
+    items: DirectChatSummary[];
+    total: number;
+    limit: number;
+    offset: number;
+  }>(`portal/direct-chats?${query}`);
+}
+
+export async function fetchDirectChat(pspCode: string) {
+  return backendRequest<DirectChat>(
+    `portal/direct-chats/messages?${new URLSearchParams({ psp_code: pspCode })}`,
+  );
+}
+
+export async function sendDirectChatMessage(params: {
+  pspCode?: string | null;
+  message?: string;
+  attachment?: File;
+}) {
+  const body = new FormData();
+  if (params.pspCode) body.set("psp_code", params.pspCode);
+  if (params.message) body.set("message", params.message);
+  if (params.attachment) body.set("attachment", params.attachment, params.attachment.name);
+  return backendRequest<DirectChatMessage>("portal/direct-chats/messages", {
+    method: "POST",
+    body,
+  });
+}
+
 function mapTransaction(
   row: BackendTransaction,
   kind: RequestKind,

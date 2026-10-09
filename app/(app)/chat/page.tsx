@@ -12,7 +12,7 @@ export default function ChatPage() {
           Support
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Find help with payment operations and request reviews.
+          Message the other side directly: admins and PSPs. Conversations are not tied to a single request.
         </p>
       </div>
       <SupportChat />

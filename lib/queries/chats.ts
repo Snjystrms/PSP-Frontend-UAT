@@ -2,8 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  fetchDirectChat,
+  fetchDirectChats,
   fetchPortalChat,
   fetchPortalChats,
+  sendDirectChatMessage,
   sendPortalChatMessage,
   updatePortalChatStatus,
 } from "@/lib/api/backend";
@@ -74,5 +77,48 @@ export function useUpdatePortalChatStatus() {
     },
     onError: (error) =>
       toast.error(error instanceof Error ? error : "Could not update this conversation."),
+  });
+}
+
+// ---------- direct chat (admins <-> PSPs) ----------
+
+export function useDirectChats(filters: {
+  unread?: boolean;
+  limit?: number;
+} = {}) {
+  return useQuery({
+    queryKey: ["direct-chats", filters],
+    queryFn: () =>
+      fetchDirectChats({ ...filters, limit: filters.limit ?? 100, offset: 0 }),
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useDirectChat(pspCode: string | null) {
+  return useQuery({
+    queryKey: ["direct-chat", pspCode],
+    queryFn: () => fetchDirectChat(pspCode!),
+    enabled: Boolean(pspCode),
+    refetchInterval: 5_000,
+  });
+}
+
+export function useSendDirectChatMessage() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (params: {
+      pspCode?: string | null;
+      message?: string;
+      attachment?: File;
+    }) => sendDirectChatMessage(params),
+    onSuccess: () => {
+      // The message list refetches on its own interval; refresh the inbox
+      // previews and unread counts right away.
+      void client.invalidateQueries({ queryKey: ["direct-chat"] });
+      void client.invalidateQueries({ queryKey: ["direct-chats"] });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error : "Could not send this message."),
   });
 }
